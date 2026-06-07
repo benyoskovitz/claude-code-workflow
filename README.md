@@ -1,6 +1,6 @@
 # A Claude Code workflow that improves itself
 
-This is the companion repo to my FocusedChaos post on how I work with Claude Code. It's not a dump of my config. It's the reusable parts, sanitized and templated, so you can fork what's useful and leave the rest.
+This is the companion repo to my Focused Chaos post on how I work with Claude Code. It's not a dump of my config. It's the reusable parts, sanitized and templated, so you can fork what's useful and leave the rest.
 
 The thing worth stealing here isn't any single file. It's the loop: define what "done" means before the agent writes code, grade the result against that definition, and treat the workflow itself as something you version and improve over time.
 
