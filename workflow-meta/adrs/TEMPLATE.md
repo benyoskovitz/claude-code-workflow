@@ -1,4 +1,4 @@
-# NNN — <decision title>
+# NNN, <decision title>
 
 **Status:** Adopted
 **Date:** <YYYY-MM-DD>
@@ -14,8 +14,8 @@ What constraints are in play?>
 
 ## Alternatives considered
 
-1. **<Alternative>.** Rejected — <reason>.
-2. **<Alternative>.** Rejected — <reason>.
+1. **<Alternative>.** Rejected, <reason>.
+2. **<Alternative>.** Rejected, <reason>.
 
 ## Consequences
 

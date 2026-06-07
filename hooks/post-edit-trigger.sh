@@ -15,16 +15,16 @@ file_path=$(echo "$input" | python3 -c 'import sys,json; d=json.load(sys.stdin);
 [ -f "$file_path" ] || exit 0
 
 case "$file_path" in
-  # Example: edits under a pipeline/LLM directory should trigger a smoke test —
+  # Example: edits under a pipeline/LLM directory should trigger a smoke test, 
   # but only if the file actually makes an external call (cheap grep gate).
   *<YOUR_LLM_DIR>*)
     grep -qE '<YOUR_EXTERNAL_CALL_HELPERS>' "$file_path" || exit 0
-    echo "REMINDER: edited $file_path — run <YOUR_SMOKE_COMMAND> before committing." >&2
+    echo "REMINDER: edited $file_path, run <YOUR_SMOKE_COMMAND> before committing." >&2
     ;;
 
   # Example: edits to a schema source of truth should trigger a sync check.
   *<YOUR_SCHEMA_FILE>*)
-    echo "REMINDER: edited $file_path — run the schema-sync check before committing." >&2
+    echo "REMINDER: edited $file_path, run the schema-sync check before committing." >&2
     ;;
 
   *)

@@ -9,7 +9,7 @@ user-invocable: true
 allowed-tools: Bash, Read, Grep, Glob
 ---
 
-# /pre-commit — quality gate before commit
+# /pre-commit, quality gate before commit
 
 Scan the staged diff for known anti-patterns before committing. This is the last
 automated check before code ships. Unlike `/assess` (per-task rubric), this runs
@@ -17,7 +17,7 @@ the same global checks on every commit.
 
 > This is a genericized scaffold. The check *categories* and the BLOCK/WARN model
 > are the reusable part. Replace the specific patterns with the anti-patterns that
-> actually bite in your stack — the most valuable ones are the mistakes you keep
+> actually bite in your stack, the most valuable ones are the mistakes you keep
 > repeating.
 
 ## When to run
@@ -40,27 +40,27 @@ Don't flag pre-existing code the change didn't touch.
 ### 2. Anti-pattern checks
 
 Assign each finding a severity: **BLOCK** (must fix before commit) or **WARN**
-(surface, let the user decide). A starter set — tune to your stack:
+(surface, let the user decide). A starter set, tune to your stack:
 
-- **Hardcoded secrets** — strings shaped like API keys, tokens, or connection
-  strings (`sk-`, `key-`, long alphanumerics, `postgres://…@…`). **BLOCK.**
-- **Missing auth on new endpoints** — a new server action / route handler that
+- **Hardcoded secrets**: strings shaped like API keys, tokens, or connection
+  strings (`sk-`, `key-`, long alphanumerics, `postgres://...@...`). **BLOCK.**
+- **Missing auth on new endpoints**: a new server action / route handler that
   doesn't call your auth helper. **BLOCK.**
-- **Raw string interpolation into queries** — template literals inside query
+- **Raw string interpolation into queries**: template literals inside query
   builders. Use parameterized queries. **BLOCK.**
-- **Debug artifacts** — `console.log`, commented-out code blocks, `TODO: remove`.
+- **Debug artifacts**: `console.log`, commented-out code blocks, `TODO: remove`.
   **WARN.**
-- **Fire-and-forget async** — unawaited promises in serverless handlers (they
+- **Fire-and-forget async**: unawaited promises in serverless handlers (they
   silently never complete). **WARN.**
-- **Generic error messages** — `"Something went wrong"` swallowing the real error.
+- **Generic error messages**: `"Something went wrong"` swallowing the real error.
   Surface the actual message. **WARN.**
-- **<Your stack's recurring footguns>** — add the patterns you keep re-learning.
+- **<Your stack's recurring footguns>**: add the patterns you keep re-learning.
 
 ### 3. Tests and types
 
 ```bash
-<your test command>      # e.g. npm run test:run — failing tests are BLOCK
-<your typecheck command> # e.g. npx tsc --noEmit — type errors are BLOCK
+<your test command>      # e.g. npm run test:run, failing tests are BLOCK
+<your typecheck command> # e.g. npx tsc --noEmit, type errors are BLOCK
 ```
 
 Note passing results in the summary ("Tests: N passed", "Types: OK").
@@ -84,7 +84,7 @@ WARNINGS (review before committing):
 
 PASSED: N checks passed
 
-Result: <BLOCKED — fix above | All checks passed, ready to commit>
+Result: <BLOCKED, fix above | All checks passed, ready to commit>
 ```
 
 ## Behavior

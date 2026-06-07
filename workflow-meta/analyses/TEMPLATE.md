@@ -1,4 +1,4 @@
-# <YYYY-MM-DD> — <topic>
+# <YYYY-MM-DD>, <topic>
 
 **Source:** <article URL / tool / framework you're comparing against>
 
@@ -10,7 +10,7 @@
 
 <Check the specific claims against primary sources (Anthropic docs, the actual
 tool behavior). Note which hold and which don't. Direction can be right while
-facts are wrong — separate the two.>
+facts are wrong, separate the two.>
 
 ## How it compares to my current workflow
 

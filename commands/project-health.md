@@ -4,13 +4,13 @@ Audit the current project's setup and report a prioritized list of gaps with sug
 
 Read the project's CLAUDE.md. Check whether it includes each of these; report PRESENT or MISSING with a one-line note:
 
-- **Project overview** — what it does, in 1-2 sentences
-- **Tech stack** — frameworks, languages, key dependencies
-- **Build & test commands** — build, test, lint, dev server
-- **Directory structure** — where key code lives
-- **Current state** — what phase, what's implemented vs stubbed
-- **Known constraints** — guardrails, things NOT to do
-- **Environment setup** — env vars, services, new-dev steps
+- **Project overview**: what it does, in 1-2 sentences
+- **Tech stack**: frameworks, languages, key dependencies
+- **Build & test commands**: build, test, lint, dev server
+- **Directory structure**: where key code lives
+- **Current state**: what phase, what's implemented vs stubbed
+- **Known constraints**: guardrails, things NOT to do
+- **Environment setup**: env vars, services, new-dev steps
 
 If CLAUDE.md doesn't exist, flag that as the top-priority gap.
 
@@ -20,7 +20,7 @@ Compare what CLAUDE.md says about structure against the actual tree (Glob/ls). F
 
 ## 3. Slash commands & skills
 
-List everything in `.claude/commands/` and `~/.claude/commands/` (and skills). Summarize each in one line. Then assess workflow coverage — flag if any of these are missing a command, but only if relevant to this project's stack: **commit** (pre-commit/commit helper), **test** (running or writing tests), **deploy** (pre-deploy checks), **review** (code review), **debug** (structured debugging).
+List everything in `.claude/commands/` and `~/.claude/commands/` (and skills). Summarize each in one line. Then assess workflow coverage, flag if any of these are missing a command, but only if relevant to this project's stack: **commit** (pre-commit/commit helper), **test** (running or writing tests), **deploy** (pre-deploy checks), **review** (code review), **debug** (structured debugging).
 
 ## 4. Hook coverage
 
@@ -37,7 +37,7 @@ Search the codebase for: `TODO`/`FIXME` (list with path + text), `HACK`/`WORKARO
 **Overall:** [HEALTHY / NEEDS ATTENTION / SIGNIFICANT GAPS]
 
 **Priority fixes** (ordered by impact):
-1. [highest-impact gap] — what to fix and why
+1. [highest-impact gap], what to fix and why
 2. ...
 
 **Section details:** the findings from each section above, with PRESENT/MISSING/OK/FLAG labels for easy scanning.

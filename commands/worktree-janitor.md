@@ -1,6 +1,6 @@
 Audit and clean up Claude Code worktrees in the current project. Lists every worktree with status, classifies orphans and phantom registrations, and prompts per-worktree to keep or remove.
 
-Use this any time the worktree directory feels cluttered, or when `/session-end` left debris behind. Safe to run on a project that doesn't use worktrees — it reports cleanly and exits.
+Use this any time the worktree directory feels cluttered, or when `/session-end` left debris behind. Safe to run on a project that doesn't use worktrees, it reports cleanly and exits.
 
 > Assumes the convention of placing worktrees under `<repo>/.claude/worktrees/<name>` and a default integration branch (this command defaults to `origin/staging`, falling back to `origin/main`). Adjust both to your setup.
 
@@ -17,7 +17,7 @@ fi
 [ -z "$MAIN_REPO" ] || [ ! -d "$MAIN_REPO/.git" ] && { echo "Not in a git repo. Nothing to do."; exit 0; }
 ```
 
-If `$MAIN_REPO/.claude/worktrees/` doesn't exist, say "No worktrees directory found — nothing to clean" and stop.
+If `$MAIN_REPO/.claude/worktrees/` doesn't exist, say "No worktrees directory found, nothing to clean" and stop.
 
 ## 2. Prune phantom git registrations
 
@@ -41,24 +41,24 @@ First match wins:
 |---|---|---|
 | **ORPHAN** | on_disk but NOT in_git, or missing/broken `.git` | `rm -rf` dir |
 | **EMPTY** | on_disk, no real contents | `rm -rf` dir |
-| **CURRENT** | path matches `$PWD` | skip — your live session |
-| **LIVE** | not `$PWD` but `heartbeat_age` fresh (< staleness threshold, default 2h) | skip — another live session |
+| **CURRENT** | path matches `$PWD` | skip, your live session |
+| **LIVE** | not `$PWD` but `heartbeat_age` fresh (< staleness threshold, default 2h) | skip, another live session |
 | **SAFE** | clean, no untracked-real, on a remote, in_git, no live heartbeat | `git worktree remove` |
-| **DIRTY** | dirty_tracked > 0 or untracked_real non-empty | prompt — show files |
-| **LOCAL-ONLY** | clean but not on any remote | prompt — show ahead count |
+| **DIRTY** | dirty_tracked > 0 or untracked_real non-empty | prompt, show files |
+| **LOCAL-ONLY** | clean but not on any remote | prompt, show ahead count |
 | **STALE** | last_activity > 14 days, other gates pass | surface; default remove |
 
-**Why LIVE matters:** with multiple Claude Code sessions open in parallel, each writes a heartbeat to its own worktree's `.claude/.in-use` (refreshed by global hooks on SessionStart / UserPromptSubmit / Stop). The janitor must NOT remove a worktree another session is using — that would yank the working directory out from under it mid-message. The heartbeat is the cross-session liveness signal.
+**Why LIVE matters:** with multiple Claude Code sessions open in parallel, each writes a heartbeat to its own worktree's `.claude/.in-use` (refreshed by global hooks on SessionStart / UserPromptSubmit / Stop). The janitor must NOT remove a worktree another session is using, that would yank the working directory out from under it mid-message. The heartbeat is the cross-session liveness signal.
 
 Print the table to the user, grouped by class, before any action.
 
 ## 5. Confirm and act
 
-Group prompts by safety tier — don't ask 8 separate questions.
+Group prompts by safety tier, don't ask 8 separate questions.
 
-- **Tier A — SAFE + EMPTY + STALE + ORPHAN.** One prompt: "Remove the N worktrees above?" On yes, loop: SAFE uses `git -C "$MAIN_REPO" worktree remove --force <path>`; ORPHAN/EMPTY use `rm -rf <path>` then `git worktree prune`. Never include CURRENT or LIVE.
-- **Tier B — DIRTY.** One at a time: show the dirty/untracked files, ask keep / discard / inspect. Default keep. Never `--force` without per-worktree confirmation.
-- **Tier C — LOCAL-ONLY.** One at a time: show ahead count + last commit subject, ask push / keep / discard. If push, `git -C <wt> push -u origin HEAD`, then re-classify.
+- **Tier A, SAFE + EMPTY + STALE + ORPHAN.** One prompt: "Remove the N worktrees above?" On yes, loop: SAFE uses `git -C "$MAIN_REPO" worktree remove --force <path>`; ORPHAN/EMPTY use `rm -rf <path>` then `git worktree prune`. Never include CURRENT or LIVE.
+- **Tier B, DIRTY.** One at a time: show the dirty/untracked files, ask keep / discard / inspect. Default keep. Never `--force` without per-worktree confirmation.
+- **Tier C, LOCAL-ONLY.** One at a time: show ahead count + last commit subject, ask push / keep / discard. If push, `git -C <wt> push -u origin HEAD`, then re-classify.
 
 ## 6. Report
 
@@ -70,4 +70,4 @@ Print final state: removed, kept, remaining. Re-run `git worktree list` to confi
 - **Never** remove the current worktree (matching `$PWD`).
 - **Never** delete a worktree with commits not on any remote without explicit confirmation including the ahead count.
 - **Always** `git worktree prune` after a manual `rm -rf`.
-- If anything fails (e.g. a lock), report and skip — do not retry with escalating force.
+- If anything fails (e.g. a lock), report and skip, do not retry with escalating force.

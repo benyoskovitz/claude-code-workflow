@@ -1,4 +1,4 @@
-# NNN — <short title>
+# NNN, <short title>
 
 **Status:** Proposed <YYYY-MM-DD>   <!-- → Adopted YYYY-MM-DD | Rejected YYYY-MM-DD -->
 **Motivation:** `analyses/<YYYY-MM-DD-topic>.md`
@@ -10,13 +10,13 @@ an example of it biting you.>
 
 ## Proposed change
 
-<The exact change. Not "improve X" — the literal diff, skill content, or hook
+<The exact change. Not "improve X", the literal diff, skill content, or hook
 script that would be applied. Specify where it lands (~/.claude/CLAUDE.md, a
 rules/ file, a skill, a project).>
 
 ## Explicit non-goals
 
-<What this deliberately does NOT do. This is the most valuable section — it stops
+<What this deliberately does NOT do. This is the most valuable section, it stops
 scope creep now and stops future-you from "fixing" an intentional omission.>
 
 ## Alternatives considered
