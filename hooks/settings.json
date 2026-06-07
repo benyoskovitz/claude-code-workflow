@@ -1,0 +1,37 @@
+{
+  "_comment": "Genericized example. Copy to .claude/settings.json and replace the <PLACEHOLDER> reminder text with your project's recurring failure modes.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); cmd=$(echo \"$input\" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get(\"tool_input\",{}).get(\"command\",\"\"))' 2>/dev/null); if echo \"$cmd\" | grep -Eq '(^|[;&|[:space:]])git[[:space:]]+commit([[:space:]]|$)'; then echo 'REMINDER: run the /pre-commit skill before every commit. If you have not already run it this session, stop and run it now. Do not bypass.' >&2; fi; exit 0"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cat <<'EOF'\n<system-reminder>\nBefore non-trivial edits to existing code: produce an Investigation Report per CLAUDE.md \"Maintenance change protocol\".\n\n<PROJECT-SPECIFIC RECURRING DRIFT TO AVOID — replace with your own one or two most common failure modes, e.g.:>\n- <Footgun #1: the wrong pattern, then the right one.>\n- <Footgun #2: ...>\n</system-reminder>\nEOF"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/post-edit-trigger.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

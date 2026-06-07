@@ -1,0 +1,102 @@
+<!--
+  CLAUDE.md TEMPLATE
+
+  Copy this to your project root as CLAUDE.md and fill in the placeholders.
+  Everything marked <LIKE THIS> is project-specific and yours to replace.
+  Everything else is the universal scaffolding worth keeping.
+
+  Keep this file under ~200 lines. If it grows past that, the litmus test:
+  "Does this shape how the agent THINKS, or just tell it what to DO?"
+  Thinking → stays here. Doing (stack-specific tactics) → move to rules/ with
+  paths: frontmatter. See rules/README.md.
+-->
+
+# <PROJECT NAME>
+
+<One or two sentences: what this project is.>
+
+## Behavioral Principles
+
+These principles sit on top of everything else in this file. They apply to every task, large or small.
+
+1. **Think before coding.** State assumptions before writing code, even on small tasks. If a request has two reasonable readings, show both and ask. If you're confused, name what's unclear and stop. Don't pick interpretations silently.
+
+2. **Simplicity first.** Minimum code that solves the problem. No speculative abstractions, no unrequested configurability, no error handling for impossible scenarios. If 200 lines could be 50, rewrite.
+
+3. **Surgical changes.** Touch only what the request requires. Match existing style — don't change quote style, add type hints, reformat whitespace, or rewrite comments as a side effect. Mention unrelated dead code, don't delete it. Only remove orphans your own change created.
+
+4. **Goal-driven execution.** For non-trivial tasks, the Task Rubric below is how this works in practice: define binary pass criteria before coding, then loop until each pillar passes.
+
+## Maintenance change protocol
+
+For any non-trivial change to existing code, before proposing edits, output an Investigation Report. The report must exist before any Edit or Write.
+
+**Skip the protocol only for:** typo fixes, comment-only changes, formatting, dependency bumps without API changes, config-value tweaks that don't change behavior. When in doubt, do the report.
+
+**For larger changes (more than one module, or any schema / data-contract / external-API change), prefer Plan Mode** — it produces this same investigation and gates implementation behind your approval.
+
+### Investigation Report schema
+
+Produce all sections. If a section is empty, explain why — empty without explanation is not allowed.
+
+- **Files read (with line ranges):** list
+- **Symbol(s) being changed:** name + file:line
+- **Direct callers and importers (paste actual grep output, not a summary):** result
+- **Tests covering this code path:** list test files, or "none found — flag as risk"
+- **Schema / contract impact:** Does this touch <YOUR SCHEMA SOURCES OF TRUTH, e.g. types file, migrations, API contracts>? If yes, <run your sync check>.
+- **<PROJECT-SPECIFIC RISK CHECK>:** <e.g. "does this touch a code path with a known footgun? Audit for X." Add one line per recurring failure mode you've hit. These are your scars — they're the most valuable lines in the file.>
+- **Task rubric (3-5 MECE pillars, binary pass criteria):** what does "done" mean for *this* task? Each pillar names what to verify and how. Pillars are task-specific. **Write the rubric to `.rubric.md`** at the repo root so the `/assess` skill can read it after Execute.
+- **Open questions:** list
+
+### Then propose
+
+- **Files to edit:** list
+- **Per-file change summary:** one line each
+- **Tests to update or add:** list
+- **Verification plan:** lint, build, test, <smoke if any>, manual check (what), then **`/assess`** to grade the diff against the rubric before **`/pre-commit`**. If `/assess` fails any pillar, re-enter Plan mode narrowed to the failed pillar — do NOT patch in place.
+
+### Greenfield additions
+
+The protocol applies with one substitution. Replace "Direct callers / Tests covering" with:
+
+- **Existing patterns in this codebase that solve a similar problem:** grep + brief description
+- **Pattern I'm following / why this differs:** explain. If deviating, name the reason.
+
+## Commands
+
+- `<dev>` — <start dev server>
+- `<build>` — <production build; must pass before commit>
+- `<test>` — <run test suite>
+- `<lint>` — <linter>
+- `<smoke, if any>` — <expensive pre-deploy checks; when to run them>
+
+After every non-trivial change: `<build> && <test>`. Before every commit: invoke the `/pre-commit` skill.
+
+## Sub-agents
+
+<Define project-specific read-only agents in .claude/agents/. Good candidates:
+a spec-reviewer that checks changes against your non-negotiables; a pattern-finder
+that surfaces the canonical existing implementation before you build something new;
+a schema-sync-checker that keeps your sources of truth aligned. Routing rules:>
+
+**Always delegate to a sub-agent:**
+- Any review or consistency check → use a read-only reviewer agent
+- Cross-referencing 3+ files from different areas → parallel sub-agents
+
+**Parallelize when** ALL hold: tasks are independent, touch different files, and there are 2+ of them.
+**Run sequentially when** ANY holds: task B needs task A's output, tasks share state, or scope is unclear.
+**Keep in main context when** the task needs the whole architecture in mind or the output is used immediately.
+
+## Required reading before implementation
+
+<List the 3-6 docs an agent must read before writing code: architecture, data
+schemas, non-negotiables, types. Point to them; don't inline them.>
+
+## Key architectural decisions
+
+<The handful of decisions that, if violated, break the system. One line each.
+If an implementation decision would compromise one of these, stop and flag it.>
+
+## Tech stack
+
+<Stack + any house rules. Keep short — the agent can read package manifests.>

@@ -1,0 +1,16 @@
+# Per-task rubric lives at repo root and is regenerated each task
+.rubric.md
+
+# Archived rubrics are local history, not for the public repo
+.rubrics/
+
+# Local session log
+SESSION_NOTES.md
+
+# Secrets — never commit
+.env
+.env.local
+.env.*.local
+
+# OS / editor
+.DS_Store
