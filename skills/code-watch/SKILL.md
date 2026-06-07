@@ -73,7 +73,7 @@ Hold these findings to combine in the final report.
 
 ### 2a. Find the rules source, in priority order
 
-1. `./quality-rules.md` (hand-authored, if present)
+1. `./quality-rules.md` (hand-authored, if present — see `examples/sample-quality-rules.md` in this repo for the shape: H2 categories, concrete checkable bullets)
 2. `./CLAUDE.md`
 3. `./.claude/CLAUDE.md`
 
