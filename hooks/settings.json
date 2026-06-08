@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cat <<'EOF'\n<system-reminder>\nBefore non-trivial edits to existing code: produce an Investigation Report per CLAUDE.md \"Maintenance change protocol\".\n\n<PROJECT-SPECIFIC RECURRING DRIFT TO AVOID — replace with your own one or two most common failure modes, e.g.:>\n- <Footgun #1: the wrong pattern, then the right one.>\n- <Footgun #2: ...>\n</system-reminder>\nEOF"
+            "command": "cat <<'EOF'\n<system-reminder>\nBefore non-trivial edits to existing code: produce an Investigation Report per CLAUDE.md \"Maintenance change protocol\".\n\n<PROJECT-SPECIFIC RECURRING DRIFT TO AVOID, replace with your own one or two most common failure modes, e.g.:>\n- <Footgun #1: the wrong pattern, then the right one.>\n- <Footgun #2: ...>\n</system-reminder>\nEOF"
           }
         ]
       }

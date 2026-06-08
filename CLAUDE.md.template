@@ -9,6 +9,14 @@
   "Does this shape how the agent THINKS, or just tell it what to DO?"
   Thinking → stays here. Doing (stack-specific tactics) → move to rules/ with
   paths: frontmatter. See rules/README.md.
+
+  ONE FILE OR TWO? This template bundles the universal/behavioral content (the
+  Behavioral Principles, the Task Rubric workflow) together with the project-
+  specific machinery, so you can start with a single file. If you'd rather run the
+  two-file split, move the universal sections to a GLOBAL file at ~/.claude/CLAUDE.md
+  (it loads for every project) and keep only the project-specific parts here. Claude
+  Code reads both at session start. The global file is where cross-project behavior
+  belongs; this project file leans on it instead of repeating it.
 -->
 
 # <PROJECT NAME>
@@ -23,7 +31,7 @@ These principles sit on top of everything else in this file. They apply to every
 
 2. **Simplicity first.** Minimum code that solves the problem. No speculative abstractions, no unrequested configurability, no error handling for impossible scenarios. If 200 lines could be 50, rewrite.
 
-3. **Surgical changes.** Touch only what the request requires. Match existing style — don't change quote style, add type hints, reformat whitespace, or rewrite comments as a side effect. Mention unrelated dead code, don't delete it. Only remove orphans your own change created.
+3. **Surgical changes.** Touch only what the request requires. Match existing style, don't change quote style, add type hints, reformat whitespace, or rewrite comments as a side effect. Mention unrelated dead code, don't delete it. Only remove orphans your own change created.
 
 4. **Goal-driven execution.** For non-trivial tasks, the Task Rubric below is how this works in practice: define binary pass criteria before coding, then loop until each pillar passes.
 
@@ -33,18 +41,18 @@ For any non-trivial change to existing code, before proposing edits, output an I
 
 **Skip the protocol only for:** typo fixes, comment-only changes, formatting, dependency bumps without API changes, config-value tweaks that don't change behavior. When in doubt, do the report.
 
-**For larger changes (more than one module, or any schema / data-contract / external-API change), prefer Plan Mode** — it produces this same investigation and gates implementation behind your approval.
+**For larger changes (more than one module, or any schema / data-contract / external-API change), prefer Plan Mode**, it produces this same investigation and gates implementation behind your approval.
 
 ### Investigation Report schema
 
-Produce all sections. If a section is empty, explain why — empty without explanation is not allowed.
+Produce all sections. If a section is empty, explain why, empty without explanation is not allowed.
 
 - **Files read (with line ranges):** list
 - **Symbol(s) being changed:** name + file:line
 - **Direct callers and importers (paste actual grep output, not a summary):** result
-- **Tests covering this code path:** list test files, or "none found — flag as risk"
+- **Tests covering this code path:** list test files, or "none found, flag as risk"
 - **Schema / contract impact:** Does this touch <YOUR SCHEMA SOURCES OF TRUTH, e.g. types file, migrations, API contracts>? If yes, <run your sync check>.
-- **<PROJECT-SPECIFIC RISK CHECK>:** <e.g. "does this touch a code path with a known footgun? Audit for X." Add one line per recurring failure mode you've hit. These are your scars — they're the most valuable lines in the file.>
+- **<PROJECT-SPECIFIC RISK CHECK>:** <e.g. "does this touch a code path with a known footgun? Audit for X." Add one line per recurring failure mode you've hit. These are your scars, they're the most valuable lines in the file.>
 - **Task rubric (3-5 MECE pillars, binary pass criteria):** what does "done" mean for *this* task? Each pillar names what to verify and how. Pillars are task-specific. **Write the rubric to `.rubric.md`** at the repo root so the `/assess` skill can read it after Execute.
 - **Open questions:** list
 
@@ -53,7 +61,7 @@ Produce all sections. If a section is empty, explain why — empty without expla
 - **Files to edit:** list
 - **Per-file change summary:** one line each
 - **Tests to update or add:** list
-- **Verification plan:** lint, build, test, <smoke if any>, manual check (what), then **`/assess`** to grade the diff against the rubric before **`/pre-commit`**. If `/assess` fails any pillar, re-enter Plan mode narrowed to the failed pillar — do NOT patch in place.
+- **Verification plan:** lint, build, test, <smoke if any>, manual check (what), then **`/assess`** to grade the diff against the rubric before **`/pre-commit`**. If `/assess` fails any pillar, re-enter Plan mode narrowed to the failed pillar, do NOT patch in place.
 
 ### Greenfield additions
 
@@ -64,11 +72,11 @@ The protocol applies with one substitution. Replace "Direct callers / Tests cove
 
 ## Commands
 
-- `<dev>` — <start dev server>
-- `<build>` — <production build; must pass before commit>
-- `<test>` — <run test suite>
-- `<lint>` — <linter>
-- `<smoke, if any>` — <expensive pre-deploy checks; when to run them>
+- `<dev>`: <start dev server>
+- `<build>`: <production build; must pass before commit>
+- `<test>`: <run test suite>
+- `<lint>`: <linter>
+- `<smoke, if any>`: <expensive pre-deploy checks; when to run them>
 
 After every non-trivial change: `<build> && <test>`. Before every commit: invoke the `/pre-commit` skill.
 
@@ -99,4 +107,4 @@ If an implementation decision would compromise one of these, stop and flag it.>
 
 ## Tech stack
 
-<Stack + any house rules. Keep short — the agent can read package manifests.>
+<Stack + any house rules. Keep short, the agent can read package manifests.>

@@ -7,7 +7,7 @@
 # Local session log
 SESSION_NOTES.md
 
-# Secrets — never commit
+# Secrets, never commit
 .env
 .env.local
 .env.*.local

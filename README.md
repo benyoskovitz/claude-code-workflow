@@ -48,6 +48,8 @@ Anthropic's soft target is under 200 lines, because longer files reduce adherenc
 
 "How it thinks" (behavioral principles, security posture, your workflow loop) stays in CLAUDE.md and loads every session. "What it does" (stack-specific tactical patterns) moves to `rules/` files with `paths:` frontmatter, so they only load when the agent reads a matching file. See `rules/README.md`.
 
+Claude Code reads two CLAUDE.md files at session start: a global one at `~/.claude/CLAUDE.md` (cross-project behavior, loads everywhere) and a per-project one at the repo root (project-specific machinery). The `CLAUDE.md.template` here bundles both layers into one file so you can start simple; its top comment explains how to split them if you want the two-file setup.
+
 ## The third idea: version your workflow, not just your code
 
 `workflow-meta/` is a separate lab where workflow changes get proposed, argued, adopted, or rejected before they touch your runtime config. A new idea or external article goes in `analyses/`. A concrete proposed change goes in `proposals/`. A decision with lasting consequences gets an `adrs/` record. This keeps your live config clean (it only holds adopted, working rules) and gives you a paper trail for *why* each rule exists. That matters, because the best rules are usually scars from a specific incident. There's a worked example in `workflow-meta/` (an analysis, the proposal it motivated, and the ADR that recorded the decision) so you can see a full lifecycle, not just blank templates.
