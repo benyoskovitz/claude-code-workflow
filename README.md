@@ -1,6 +1,6 @@
 # A Claude Code workflow that improves itself
 
-This is the companion repo to my Focused Chaos post on how I work with Claude Code. It's not a dump of my config. It's the reusable parts, sanitized and templated, so you can fork what's useful and leave the rest.
+This is the companion repo to my Focused Chaos post, [How I Ship Real Software with Claude Code (without being a developer)](https://focusedchaos.co/how-i-ship-real-software-with-claude-code). It's not a dump of my config. It's the reusable parts, sanitized and templated, so you can fork what's useful and leave the rest.
 
 A note on what this is and isn't. It isn't a comprehensive toolkit, and it isn't trying to be. If you want a full pre-built engineering team in a box, Garry Tan's [gstack](https://github.com/garrytan/gstack) is bigger and more complete. This is smaller and more opinionated. It's the handful of habits that made AI-written code trustworthy for me, plus the structure I use to keep improving them. The value is in the discipline, not the number of tools.
 
