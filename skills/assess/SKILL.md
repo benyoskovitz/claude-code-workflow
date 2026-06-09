@@ -1,113 +1,158 @@
 ---
 name: assess
 description: >
-  Grades the current diff against the task rubric written at .rubric.md before
-  implementation. Reports pass/fail per pillar with cited evidence. On PASS,
-  clears the change for /pre-commit and archives the rubric. On FAIL, stops and
-  outputs a re-plan directive, does not patch in place, does not proceed.
-  Invoke after Execute and before /pre-commit on any non-trivial task.
+  Grade the current diff against the task rubric written at .rubric.md before
+  implementation. Grading runs in a fresh, independent sub-agent so the agent that
+  wrote the code is not the one certifying it. On PASS, clears the change for
+  /pre-commit and archives the rubric. On FAIL, outputs a re-plan directive and
+  stops, never patches in place. Run after Execute, before /pre-commit.
+user-invocable: true
+allowed-tools: Task, Bash, Read, Grep, Glob
 ---
 
-# /assess, grade the diff against the rubric
+# /assess: grade the diff against the rubric
 
-You are an assessor. Your job is to check whether the change that was just made
-satisfies the contract that was written before the change started. You report.
-You do not fix, patch, or improve the code. You do not proceed to commit.
+This is the gate between doing the work and committing it. It checks whether the
+change that was just made satisfies the contract (`.rubric.md`) that was written
+before the change started. It reports. It does not fix, patch, or improve code,
+and it does not proceed to commit.
 
-## Inputs
+The important design choice: **the grading happens in a separate sub-agent.** The
+agent that wrote the code must not be the agent that certifies it. A self-grade
+just confirms its own reasoning, especially on judgment-call pillars. So this skill
+spawns a fresh grader that sees only the rubric and the diff, with none of this
+session's implementation context, and takes its verdict as the assessment.
 
-1. `.rubric.md` at the repository root, the task rubric, written during planning.
-   It contains 3 to 5 pillars, each with a binary pass criterion and a stated
-   verification method.
-2. `git diff` (and `git diff --staged`), the change to grade.
-3. The repository, read-only, to gather the evidence each pillar's verification
-   method calls for.
+## Steps
 
-## Procedure
+### 1. Locate the rubric
 
-1. **Read `.rubric.md`.**
-   - If it does not exist: this is a **no-op**. Output a single line, 
-     "No `.rubric.md` found; /assess is a no-op. Write a rubric during planning
-     to enable assessment.", and stop. Do NOT infer a rubric from the diff.
-     Inferring the contract after the fact defeats the purpose.
-
-2. **Read the diff.** `git diff` plus `git diff --staged`. This is the full
-   surface you are grading.
-
-3. **Grade each pillar independently, in order.** For each pillar:
-   - Run its stated verification method (read the cited files, run the cited
-     command via the user's normal tooling, grep for the cited pattern).
-   - Decide **PASS** or **FAIL**. Binary. No partial credit, no scores.
-   - Cite the specific evidence: file:line, command output, or grep result.
-     A verdict without cited evidence is not a verdict.
-   - If a pillar's pass criterion is genuinely ambiguous, you cannot tell what
-     would count as passing, mark it **RUBRIC DEFECT**, not a fail. The defect
-     is in the contract, not the implementation.
-
-4. **Aggregate.**
-   - **All pillars PASS** → overall PASS.
-   - **Any pillar FAIL** → overall FAIL.
-   - **Any RUBRIC DEFECT** → overall BLOCKED-ON-RUBRIC (treat like a fail for
-     proceeding, but the fix is to the rubric, not the code).
-
-## Output
-
-Lead with the overall verdict. Then one block per pillar:
-
-```
-PILLAR 1, <pillar name>: PASS
-  Criterion: <restate the binary criterion>
-  Verification: <what you ran/read>
-  Evidence: <file:line / command output / grep result>
-
-PILLAR 2, <pillar name>: FAIL
-  Criterion: <restate>
-  Verification: <what you ran/read>
-  Evidence: <the specific thing that is missing or wrong>
+```bash
+test -f .rubric.md && cat .rubric.md
 ```
 
-### On PASS
+If it does not exist, output `No rubric found at .rubric.md. /assess is a no-op without a task rubric written before implementation.` and stop. Do NOT invent a rubric after the fact; that defeats the purpose.
 
-1. State: "PASS, cleared for /pre-commit."
-2. Archive the rubric: copy `.rubric.md` to `.rubrics/<YYYY-MM-DD-HHMM>-<branch>.md`
-   so it becomes a durable record of what "done" meant for this change.
+### 2. Get the diff
+
+```bash
+git diff --staged HEAD
+git diff HEAD
+```
+
+Combine them. If both are empty, output `No changes to assess.` and stop.
+
+### 3. Grade in an independent sub-agent
+
+**Do NOT grade the rubric yourself.** Spawn a fresh general-purpose sub-agent (the
+Task tool, `subagent_type: "general-purpose"`) with the prompt below, substituting
+`<RUBRIC>` with the verbatim contents of `.rubric.md` from step 1. Everything
+between the fences is the sub-agent's prompt:
+
+---
+You are an independent rubric grader. You did NOT write this code. Your job is to
+certify whether the current change satisfies its task rubric, skeptically and on
+evidence only. You read and report. You never modify, create, or delete files.
+
+The task rubric:
+
+<RUBRIC>
+
+Steps:
+1. Run `git diff --staged HEAD` and `git diff HEAD`. Combine them. That, plus the
+   current working tree, is all you may rely on. Do not assume intent that isn't
+   visible in the diff or tree.
+2. For each pillar, read the pass criterion verbatim and verify it:
+   - Prefer concrete checks (grep for a pattern, read a specific file) over
+     judgment. If a criterion is too vague to verify deterministically, mark it
+     AMBIGUOUS (a rubric defect, not an implementation defect).
+   - PASS requires citing the file:line that satisfies the criterion. "Probably
+     fine" with no citable evidence is a FAIL.
+   - FAIL cites the file:line that violates it, or "no evidence found in diff" if
+     the criterion required an addition that was not made.
+   - Don't be pedantic: if a criterion was "test added or risk flagged" and the
+     diff has a `// risk: no test, covered by smoke test X` comment, that's a PASS.
+   - If a pillar needs more than a few greps/reads to verify, mark it AMBIGUOUS
+     rather than crawling the codebase. That vagueness is a rubric defect.
+3. Return ONLY the report in this exact shape, no preamble, no sign-off:
+
+   TASK RUBRIC ASSESSMENT
+   ======================
+   Task: <one-line description from rubric>
+
+   PASS  Pillar 1: <name>
+     Criterion: <verbatim>
+     Evidence: <file:line or finding>
+
+   FAIL  Pillar 2: <name>
+     Criterion: <verbatim>
+     Evidence: <file:line or "no evidence found">
+     Gap: <one line: what is missing>
+
+   AMBIGUOUS  Pillar 3: <name>
+     Criterion: <verbatim>
+     Issue: <why this cannot be verified deterministically>
+
+   RUBRIC GAPS (optional, WARN only):
+     <a pillar that should obviously exist but the rubric omits>
+
+   Result: <PASS: N of N passed | FAIL: N of M passed | RUBRIC DEFECT: N ambiguous>
+---
+
+Take the sub-agent's returned report as the assessment. Do not re-grade it or
+override it. If it came back in the wrong shape, re-invoke once with a correction;
+do not silently substitute your own grade. Surface the report to the user verbatim,
+then act on the `Result:` line in step 4.
+
+### 4. Handle the result
+
+**All pillars PASS:**
+1. State "PASS. Cleared for /pre-commit."
+2. Archive the rubric so there's a durable record of what "done" meant:
+   `mkdir -p .rubrics && mv .rubric.md .rubrics/$(date +%Y-%m-%d-%H%M)-$(git branch --show-current).md`
 3. Stop. The user runs `/pre-commit` next.
 
-### On FAIL
+**Any pillar FAILs:**
+1. State "FAIL. Not cleared, do not commit."
+2. Output this directive verbatim:
 
-1. State: "FAIL, not cleared. Do not commit."
-2. Output a **re-plan directive**: name each failed pillar and what specifically
-   is unsatisfied. This is the input to the next planning pass.
-3. **Do not suggest code patches.** Do not edit anything. The user re-enters Plan
-   mode narrowed to the failed pillar(s). Patching in place against a failed
-   rubric is how scope creep and runaway loops start.
+   ```
+   RE-PLAN REQUIRED
 
-### On RUBRIC DEFECT
+   A failed pillar means re-entering Plan mode narrowed to the failed pillar(s)
+   above. Do NOT patch in place; patches mask the underlying gap.
 
-1. Name the ambiguous pillar and explain why it can't be graded.
-2. Recommend the rubric be rewritten with a binary, checkable criterion.
-3. Do not grade the rest as a final verdict, a defective contract can't pass.
+   Produce a focused plan for the failed pillar(s) only:
+   - What is the minimum change to satisfy this pillar?
+   - What did the original plan miss?
+   - Are there related call sites the original plan also missed?
 
-## Calibration
+   Update .rubric.md only if the pillar itself was wrong; otherwise leave it and
+   iterate on the implementation.
+   ```
+3. Do NOT proceed to `/pre-commit`. Do NOT suggest a quick fix.
 
-- **Don't be lenient on PASS.** "Probably fine" is a FAIL. If you can't cite
-  evidence, it's not a pass.
-- **Don't be pedantic on FAIL.** If a pillar said "test added OR risk flagged" and
-  the diff has a `// risk: no test, covered by smoke X` comment, that's a PASS.
-- **The rubric is the contract.** If the change does something useful the rubric
-  didn't ask for, that's fine but out of scope for this assessment. Grade only
-  what was asked.
-- **Missing-but-obvious pillars are a WARN, not a FAIL.** If the rubric clearly
-  should have had a pillar it doesn't (e.g. a change with real timeout risk and no
-  safety pillar), surface it under a `RUBRIC GAPS` note at the bottom as feedback
-  for the next planning pass. The rubric is what was agreed to; gaps inform the
-  next one.
-- **Single pass only.** Report and stop. The re-plan loop is human-driven.
+**RUBRIC DEFECT (pillars AMBIGUOUS, none failed):**
+1. State "RUBRIC DEFECT. Cannot certify done."
+2. Suggest tightening the ambiguous pillar(s) into binary, checkable criteria at
+   the next planning step. Do not proceed.
 
 ## Non-goals (hard rules)
 
-- **No numeric scoring.** Never grade 1-to-10 or assign percentages. Binary per
-  pillar only. Numbers invite self-debate and fake precision.
+- **No numeric scoring.** Binary per pillar. Numbers invite self-debate and fake
+  precision.
+- **No self-grading.** The grade comes from the independent sub-agent, not from the
+  agent that wrote the code.
 - **No autonomous re-planning.** Report and stop. The human drives the re-plan.
-- **No rubric inference.** No file, no assessment.
-- **No code changes, ever.** This skill is read-only against the codebase.
+- **No rubric inference.** No `.rubric.md`, no assessment.
+- **No code changes, ever.** Read-only against the codebase.
+
+## Why a separate grader
+
+The rubric solves half the problem: it stops the AI from grading against a standard
+it invented after the fact. The independent sub-agent solves the other half: it
+stops the AI from grading its *own work*. The writer is invested in its own
+reasoning and will wave through a judgment-call pillar it would fail in someone
+else's diff. A fresh grader with no implementation context can't. The idea is
+SPEAR-inspired (define a contract before you build); the binary-not-scored grading
+and the separate grader are deliberate changes to it.
