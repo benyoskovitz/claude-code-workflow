@@ -48,6 +48,13 @@ Assign each finding a severity: **BLOCK** (must fix before commit) or **WARN**
   doesn't call your auth helper. **BLOCK.**
 - **Raw string interpolation into queries**: template literals inside query
   builders. Use parameterized queries. **BLOCK.**
+- **Supply-chain config injection**: a config file (`postcss.config.*`,
+  `next.config.*`, `tailwind.config.*`) with a run of 200+ spaces/tabs before
+  code — the 2026 npm "whitespace-injector" RAT hides its payload off-screen to
+  the right, invisible in editors and diffs. `grep -nE '[[:blank:]]{200,}[^[:blank:]]'`.
+  **BLOCK** (stop, don't build, rotate any credential the build could read).
+- **Unpinned `npx ...@latest`**: re-resolves to whatever's newest on every run —
+  the supply-chain attack's entry point. Pin to an exact version. **WARN.**
 - **Debug artifacts**: `console.log`, commented-out code blocks, `TODO: remove`.
   **WARN.**
 - **Fire-and-forget async**: unawaited promises in serverless handlers (they
