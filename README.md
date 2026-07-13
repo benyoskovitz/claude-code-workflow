@@ -16,6 +16,7 @@ The most useful thing here isn't any single file. It's the loop: define what "do
 | `workflow-meta/` | The "lab" for versioning your workflow: analyses, proposals, and ADRs, with one worked example | High. The most distinctive idea here |
 | `skills/pre-commit/` | A genericized commit gate (secrets, missing auth, anti-patterns). A scaffold to adapt, not a finished tool | Medium. Fill in your own rules |
 | `skills/code-watch/` | Deep, on-demand two-lens audit: security/bugs plus conformance to your CLAUDE.md's own rules. Runs inline, no setup. Overlaps Claude Code's built-in `/security-review` | Medium |
+| `skills/systematic-debugging/` | Debugging discipline: no fixes before root cause, one hypothesis at a time, hard stop after 3 failed attempts. Adapted from obra/superpowers | Medium |
 | `hooks/` | Guardrail hooks: nudge the commit skill, inject reminders, flag risky edits. Mechanism is generic, contents are yours | Medium |
 | `commands/` | Session lifecycle and upkeep. `/blast-radius` and the audit commands are broadly useful; `/session-end` and `/worktree-janitor` assume a git-worktree plus staging-first workflow and are advanced | Mixed. Read before adopting |
 | `examples/` | Filled-in sample artifacts (rubric, investigation report, quality rules) so you can see the shapes | Reference |
@@ -61,7 +62,7 @@ Lean context is two disciplines, not one. This section is about lean *instructio
 Skills do the work; commands manage the work around it. The `commands/` folder holds the lifecycle and upkeep pieces:
 
 - **`/blast-radius`** greps the real importers, callers, and tests of a file or symbol before a change, so the Investigation Report is grounded in fact. Useful in any repo.
-- **`/audit-instructions`** grades your instruction files against eight failure modes (vague scope, no verification step, duplicate source of truth, and so on) and tightens the loose ones.
+- **`/audit-instructions`** grades your instruction files against ten failure modes (vague scope, no verification step, duplicate source of truth, and so on) and tightens the loose ones.
 - **`/project-health`** audits a project's whole Claude setup (CLAUDE.md completeness, command and hook coverage, outstanding debt) and reports prioritized gaps.
 - **`/session-audit`** periodically re-reads your CLAUDE.md and memory for stale rules, undocumented workarounds, and contradictions with the actual code.
 - **`/session-end`** is the deterministic wrap-up: it writes structured session notes, commits and pushes them, and safely cleans up the git worktree only once your work is provably saved.
@@ -90,4 +91,6 @@ The task-rubric and `/assess` loop was inspired by **SPEAR** (Scope, Plan, Execu
 
 The Behavioral Principles block and the lean, path-scoped CLAUDE.md approach were shaped by Yanli Liu's *"The 4 Lines Every CLAUDE.md Needs"* (Level Up Coding, 2026) and the [Karpathy CLAUDE.md thread](https://x.com/karpathy/status/2015883857489522876). Worth noting: I fact-checked the article's specific claims against Anthropic's docs and several didn't hold up (the "6K/12K character caps" don't exist; the real guidance is a roughly 200-line soft target). The directional argument is sound; the specifics aren't. Verify before you adopt.
 
-Implementations and all wording are mine. These are the conceptual lineages, not sources I copied.
+The `skills/systematic-debugging/` skill is the one exception to "all wording is mine": it's adapted from Jesse Vincent's [superpowers](https://github.com/obra/superpowers) (MIT), trimmed to about a third and rewritten in plain English. I evaluated the full superpowers plugin and deliberately took only this piece (plus two small rules folded into `/assess` and `/audit-instructions`): the rest is a heavier, subagent-per-task methodology that duplicates what the loop here already does at a fraction of the cost. Same lesson as everything else in this repo: cherry-pick what fits, skip the framework.
+
+Everything else: implementations and all wording are mine. These are the conceptual lineages, not sources I copied.

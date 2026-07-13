@@ -30,6 +30,10 @@ For every instruction (bullet, step, or directive paragraph), ask:
 
 **H. Memory-CLAUDE.md overlap**, a memory restating a rule already codified in CLAUDE.md (triple-loaded every session). *Fix:* delete the memory; CLAUDE.md is the permanent home.
 
+**I. Stale model-compensation workaround**, "Is this rule fighting a model limitation that no longer exists?" Rules written to counter a past model failure mode (premature stopping, "laziness", needing every step spelled out) become dead weight after a model upgrade. *Fix:* don't auto-delete; flag it with the behavior it targets and re-test on the current model, run the task once WITHOUT the rule and remove it only if the failure mode doesn't recur. Flag-for-human-judgment, never an automatic edit.
+
+**J. Bypassable by rationalization**, "Is this rule clear but routinely talked around?" The rule is specific and verifiable, yet gets skipped via in-the-moment reasoning: "too simple", "it's urgent", "just this once". *Fix:* name the 2-3 likeliest escape hatches next to the rule with a one-line rebuttal each (the rationalization-table pattern from [obra/superpowers](https://github.com/obra/superpowers)), but only where skipping has actually bitten; pre-empting hypothetical excuses is context waste.
+
 ## Step 3: Output
 
 Per issue:
@@ -37,7 +41,7 @@ Per issue:
 ```
 ### [File], Line/Section
 **Current:** [exact text]
-**Failure mode:** [A-H], [one sentence: how it could be followed superficially]
+**Failure mode:** [A-J], [one sentence: how it could be followed superficially]
 **Suggested fix:** [rewritten instruction]
 ```
 
@@ -45,7 +49,7 @@ Group by file. Sort by severity, duplicate-source-of-truth (C) and global-projec
 
 ## Step 4: Summary
 
-Total issues per failure mode (A-H); the top 3 highest-risk instructions; and any already-well-written instructions worth holding up as the standard.
+Total issues per failure mode (A-J), calling out mode-I candidates separately since each needs a re-test decision rather than a direct fix; the top 3 highest-risk instructions; and any already-well-written instructions worth holding up as the standard.
 
 ## Important
 

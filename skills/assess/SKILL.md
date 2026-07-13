@@ -68,6 +68,10 @@ Steps:
      AMBIGUOUS (a rubric defect, not an implementation defect).
    - PASS requires citing the file:line that satisfies the criterion. "Probably
      fine" with no citable evidence is a FAIL.
+   - Fresh evidence only: if a criterion claims something runs or passes (a test,
+     a build, a command), run that command yourself during this assessment and
+     cite its output. A "success" report from the implementing session or another
+     agent is not evidence; re-run the check or inspect the diff directly.
    - FAIL cites the file:line that violates it, or "no evidence found in diff" if
      the criterion required an addition that was not made.
    - Don't be pedantic: if a criterion was "test added or risk flagged" and the
