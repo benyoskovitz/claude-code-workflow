@@ -1,10 +1,13 @@
 # Hooks, guardrails that fire automatically
 
-Hooks turn "rules I hope the agent remembers" into "reminders the system injects at the right moment." Three placements do most of the work:
+Hooks turn "rules I hope the agent remembers" into "reminders the system injects at the right moment." Four placements do most of the work:
 
+- **SessionStart**: put something in context before the first prompt. Use it to read the last few session-notes files back in, so a new session starts knowing where the previous one stopped.
 - **PreToolUse**: inspect a tool call before it runs. Use it to catch a `git commit` and remind the agent to run `/pre-commit` first.
 - **UserPromptSubmit**: inject a reminder on every turn. Use it for the one or two failure modes you keep hitting, so they're always in context.
 - **PostToolUse**: react to an edit. Use it to nudge "you just touched a file that needs a smoke test / schema sync."
+
+`SessionStart` and `UserPromptSubmit` are the two whose stdout Claude actually reads. For every other placement, stdout goes to the debug log and only **stderr** reaches the agent.
 
 The *mechanism* here is fully reusable. The *contents* (which files trigger which reminder) are yours to fill in, they should encode your project's specific recurring drift, not mine.
 
@@ -18,3 +21,4 @@ The *mechanism* here is fully reusable. The *contents* (which files trigger whic
 - Hooks print to **stderr** and `exit 0`. They surface a reminder; they don't block. (A non-zero exit can block a tool call if you want a hard gate, use sparingly.)
 - Keep the inline JSON hooks short. Anything with logic (path matching, grep) belongs in a `.sh` script the hook calls, like `post-edit-trigger.sh`.
 - These pair with the `/pre-commit` skill: the PreToolUse hook reminds, the skill does the actual checking. Belt and suspenders.
+- The SessionStart reader is the other half of `/session-end`. That command writes one notes file per session into `session-notes/`; this hook reads the most recent three back. Without the hook the notes are write-only.

@@ -1,6 +1,17 @@
 {
   "_comment": "Genericized example. Copy to .claude/settings.json and replace the <PLACEHOLDER> reminder text with your project's recurring failure modes.",
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if [ -d session-notes ] && ls session-notes/*.md >/dev/null 2>&1; then echo '--- LAST SESSION CONTEXT ---'; ls -1 session-notes/*.md | sort | tail -n 3 | while IFS= read -r f; do cat \"$f\"; echo; done; echo '--- END LAST SESSION ---'; elif [ -f SESSION_NOTES.md ]; then echo '--- LAST SESSION CONTEXT ---'; tail -n 60 SESSION_NOTES.md; echo '--- END LAST SESSION ---'; fi",
+            "statusMessage": "Checking for session notes..."
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
