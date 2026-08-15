@@ -95,6 +95,25 @@ a schema-sync-checker that keeps your sources of truth aligned. Routing rules:>
 **Run sequentially when** ANY holds: task B needs task A's output, tasks share state, or scope is unclear.
 **Keep in main context when** the task needs the whole architecture in mind or the output is used immediately.
 
+### Bounded delegation is pre-authorized
+
+Claude Code's built-in default is not to delegate unless asked. Treat this section as the ask, standing and in writing. **Delegating to a single bounded sub-agent in the cases below IS a user request: do it, announce it in one line, and don't stop for permission.**
+
+Pre-authorized, no per-invocation permission needed:
+
+1. **A skill's own steps.** If a skill specifies a sub-agent as part of how it works, run it as written. The `/assess` grader is the canonical case: it has to be a fresh agent, because the agent that wrote the code can't certify it. Self-grading is a failure of the skill, not a safe fallback.
+2. **This project's agent registry.** Agents defined in `.claude/agents/` and invoked as this file directs.
+3. **Read-only exploration** where the sub-agent exists to keep a large volume of search output out of the main context.
+
+Still gated, unchanged:
+
+- **Every `Workflow` call** keeps the full pre-flight below: max agent count, token estimate, cheaper alternative, explicit go-ahead.
+- **Ad-hoc fan-out of 3 or more sub-agents** that no skill or registry named in advance. State the count and the reason first.
+
+The line is fan-out, not delegation. One named agent doing a bounded job is a tool call. A swarm the agent decided to spawn on its own is a spending decision, and only that needs a human in the loop.
+
+If a sub-agent can't be spawned for any reason, say so explicitly and name what was lost. Never silently substitute the current session for an independent one.
+
 ## Dynamic workflows: cost gate
 
 A dynamic workflow can fan out into hundreds of sub-agents and spend millions of tokens from a script nobody read closely. Treat every `Workflow` call as a spending decision.

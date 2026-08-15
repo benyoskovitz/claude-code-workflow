@@ -17,6 +17,8 @@ The most useful thing here isn't any single file. It's the loop: define what "do
 | `skills/pre-commit/` | A genericized commit gate (secrets, missing auth, anti-patterns). A scaffold to adapt, not a finished tool | Medium. Fill in your own rules |
 | `skills/code-watch/` | Deep, on-demand two-lens audit: security/bugs plus conformance to your CLAUDE.md's own rules. Runs inline, no setup. Overlaps Claude Code's built-in `/security-review` | Medium |
 | `skills/systematic-debugging/` | Debugging discipline: no fixes before root cause, one hypothesis at a time, hard stop after 3 failed attempts. Adapted from obra/superpowers | Medium |
+| `output-styles/` | `Plain English`: explain technical work to someone who ships product but doesn't read code. Governs how every answer is written, with the reasoning for why this belongs in a style rather than in CLAUDE.md | Medium |
+| `skills/humanizer/` | The voice-neutral AI-writing tell list (em dashes, buzzwords, throat-clearing, reveal-bait). One shared source so your voice guides don't each grow a drifting copy | Medium |
 | `hooks/` | Guardrail hooks: nudge the commit skill, inject reminders, read session notes back at startup, and force a cost confirmation before any dynamic workflow fans out | Medium |
 | `scripts/` | Standalone read-only checks. `supply-chain-scan.sh` sweeps a repo for a whitespace-injector signature and unpinned `npx ...@latest` installs | Medium |
 | `commands/` | Session lifecycle and upkeep. `/blast-radius` and the audit commands are broadly useful; `/session-end` and `/worktree-janitor` assume a git-worktree plus staging-first workflow and are advanced | Mixed. Read before adopting |
