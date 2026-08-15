@@ -118,6 +118,13 @@ If a sub-agent can't be spawned for any reason, say so explicitly and name what 
 
 A dynamic workflow can fan out into hundreds of sub-agents and spend millions of tokens from a script nobody read closely. Treat every `Workflow` call as a spending decision.
 
+**Workflows are an opt-in power tool, not a default mode.**
+
+- **Leave `ultracode` off.** That setting lets the agent decide on its own when a task earns a fan-out. That's a standing grant of autonomy, and it's the opposite of gating spend.
+- **Invoke a workflow explicitly, per task**, and only where breadth genuinely beats a single context: a broad review or audit across many dimensions at once; a codebase-wide migration or sweep, one isolated worktree agent per site; a design decision worth several independent approaches judged against each other; or exhaustive research that needs multi-modal source fan-out.
+- **Routine coding stays solo.** Explicitly out of scope. A workflow is not a faster way to write a feature.
+- **The normal gate still applies to whatever a workflow produces.** Rubric, then `/assess`, then `/pre-commit`, then a human. A workflow proposes; it doesn't bypass review.
+
 **Before EVERY `Workflow` call, state these and wait for a clear go-ahead:**
 
 1. **Maximum sub-agent count.** Read the script's fan-out (`agent`, `parallel`, `pipeline`) and any loops, multiply through, and give the worst case as a number. Not "a few." If the loop is bounded only by input or budget, say so and name the hard cap you'll impose.
@@ -125,6 +132,8 @@ A dynamic workflow can fan out into hundreds of sub-agents and spend millions of
 3. **The cheaper alternative, first.** For anything low-stakes and easy to judge by eye (doc sweeps, instruction audits), a single ordinary pass is usually the right call. Verification swarms, where N skeptics re-check every finding, are where the cost detonates. Save them for findings that are genuinely expensive for a human to judge.
 
 Pair this with `hooks/workflow-cost-gate.sh`, which forces the confirmation prompt automatically. The hook is the floor. The estimate above is still the agent's job, and it should never be waved through silently.
+
+The hook reads the top-level script only, so it under-counts when spawned agents spawn their own (possible up to five levels deep since v2.1.172). Read every count it reports as a minimum.
 
 ## Required reading before implementation
 

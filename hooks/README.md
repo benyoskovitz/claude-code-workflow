@@ -27,6 +27,14 @@ The hook reads the workflow script before it runs, counts `agent()` call sites a
 
 It's a floor, not a substitute for judgment. The prompt tells the agent to state a maximum sub-agent count and a token estimate before you approve. Don't wave that through.
 
+### Known limitation: it under-counts nested fan-out
+
+The estimate comes from reading the top-level script. It cannot see what a spawned agent goes on to spawn. Since Claude Code v2.1.172 a sub-agent can spawn its own sub-agents up to five levels deep, so a script showing three `agent()` calls can still fan out far past what the prompt reports. The count is a floor on the real number, not a ceiling.
+
+Two things follow. Read the numbers in the prompt as "at least this many," not "this many." And when a workflow's agents are themselves told to delegate, treat the estimate as unreliable and ask for the depth, not just the count.
+
+Fixing this properly means parsing what each spawned agent is instructed to do, which the hook can't do from a script alone. Until then it's a documented gap rather than a solved one.
+
 ## Notes
 
 - Hooks print to **stderr** and `exit 0`. They surface a reminder; they don't block. (A non-zero exit can block a tool call if you want a hard gate, use sparingly.)
