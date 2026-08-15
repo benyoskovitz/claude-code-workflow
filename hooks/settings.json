@@ -14,6 +14,15 @@
     ],
     "PreToolUse": [
       {
+        "matcher": "Workflow",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/workflow-cost-gate.sh"
+          }
+        ]
+      },
+      {
         "matcher": "Bash",
         "hooks": [
           {

@@ -15,6 +15,17 @@ The *mechanism* here is fully reusable. The *contents* (which files trigger whic
 
 - `settings.json`: the hook wiring. Copy into `.claude/settings.json` and edit the reminder text.
 - `post-edit-trigger.sh`: example PostToolUse script: matches edited file paths against a trigger list and prints a reminder to stderr. Genericized from a real smoke-test trigger.
+- `workflow-cost-gate.sh`: PreToolUse gate on the `Workflow` tool. Forces a confirmation prompt with a fan-out estimate before any dynamic workflow runs. Needs `jq`.
+
+## The cost gate
+
+This is the one hook here that blocks rather than nudges, and it's worth explaining why.
+
+A dynamic workflow can fan out into hundreds of sub-agents from a script you skimmed. In one real incident an instruction-audit workflow spawned 495 agents and burned 4.1M output tokens, exhausting a session's quota and costing real money, for findings a single ordinary pass produced at a fraction of the cost.
+
+The hook reads the workflow script before it runs, counts `agent()` call sites and `parallel`/`pipeline` fan-outs, flags loops (which multiply everything), and returns `permissionDecision: "ask"` so you always get a confirm prompt with those numbers attached. It deliberately over-counts. Over-warning is cheap; the failure it prevents is not.
+
+It's a floor, not a substitute for judgment. The prompt tells the agent to state a maximum sub-agent count and a token estimate before you approve. Don't wave that through.
 
 ## Notes
 

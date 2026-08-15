@@ -95,6 +95,18 @@ a schema-sync-checker that keeps your sources of truth aligned. Routing rules:>
 **Run sequentially when** ANY holds: task B needs task A's output, tasks share state, or scope is unclear.
 **Keep in main context when** the task needs the whole architecture in mind or the output is used immediately.
 
+## Dynamic workflows: cost gate
+
+A dynamic workflow can fan out into hundreds of sub-agents and spend millions of tokens from a script nobody read closely. Treat every `Workflow` call as a spending decision.
+
+**Before EVERY `Workflow` call, state these and wait for a clear go-ahead:**
+
+1. **Maximum sub-agent count.** Read the script's fan-out (`agent`, `parallel`, `pipeline`) and any loops, multiply through, and give the worst case as a number. Not "a few." If the loop is bounded only by input or budget, say so and name the hard cap you'll impose.
+2. **Rough token estimate.** Agents times typical output per agent. Roughly 8k output tokens per agent is a workable anchor, so 100 agents is about 0.8M tokens.
+3. **The cheaper alternative, first.** For anything low-stakes and easy to judge by eye (doc sweeps, instruction audits), a single ordinary pass is usually the right call. Verification swarms, where N skeptics re-check every finding, are where the cost detonates. Save them for findings that are genuinely expensive for a human to judge.
+
+Pair this with `hooks/workflow-cost-gate.sh`, which forces the confirmation prompt automatically. The hook is the floor. The estimate above is still the agent's job, and it should never be waved through silently.
+
 ## Required reading before implementation
 
 <List the 3-6 docs an agent must read before writing code: architecture, data
