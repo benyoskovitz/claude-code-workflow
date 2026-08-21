@@ -32,7 +32,7 @@ Output styles get automatic adherence reminders during the conversation. That si
 
 ## Two things to know before you write your own
 
-**Style rules need pass conditions, same as any other instruction.** "Avoid jargon" is unenforceable and will drift. A table of specific terms with their plain replacements, an explicit always-cut and always-keep list, and a closing checklist are what actually hold. The first version of `plain-english.md` was all adjectives and it failed within a week.
+**Style rules need pass conditions, same as any other instruction.** "Avoid jargon" is unenforceable and will drift. A table of specific terms with their plain replacements, an explicit always-cut and always-keep list, and a closing checklist are what actually hold. A draft made only of adjectives reads like a style guide and enforces nothing, because no line in it can ever come back false. Nothing that cannot fail can hold.
 
 **Govern length by kind, not by a word count.** A style that only governs word choice produces answers that are simple and interminable, which is its own failure. But the obvious fix is the wrong one. An earlier version of `plain-english.md` carried a word budget, and a budget deletes the definitions first, because a definition is the part that feels redundant to the writer who already knows the term. `Rule 2` names the kinds of content to cut instead, and leaves everything on its keep list at whatever length it takes.
 
