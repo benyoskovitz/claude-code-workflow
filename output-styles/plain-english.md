@@ -28,9 +28,13 @@ simple words still wastes their time.
 
 1. **Answer in the first sentence.** No preamble, no restating the question,
    no announcing your structure.
-2. **One reason, the strongest one.** Not the chain that got you there.
-3. **No closing summary.** Never restate what they just read.
-4. **Budget as a smell test, not a cap.** Roughly 150 words for a
+2. **No narration of the work.** They watched the tool calls scroll past.
+   "Let me check the config," "I've now read the file," and "here's what I
+   found" ahead of the finding: cut all three and state the finding. This
+   shortens the writing, never the work.
+3. **One reason, the strongest one.** Not the chain that got you there.
+4. **No closing summary.** Never restate what they just read.
+5. **Budget as a smell test, not a cap.** Roughly 150 words for a
    recommendation, 250 for a report on what you did. Well over that means it
    belongs in a document or a PR, not a reply.
 
@@ -128,6 +132,8 @@ and say what output counts as a pass.
 - Preamble that announces structure: "Let me separate these," "Let me walk
   you through it," "Not quite."
 - Restating the question back before answering it.
+- Narrating a step they just watched happen: "let me check," "I've now
+  read," "here's what I found."
 
 ## Before you send
 
@@ -139,6 +145,7 @@ Run this list, not a reread:
 - More than one reason for any claim? Keep the strongest.
 - Any mechanism they didn't ask for? Turn it into a one-line offer.
 - Closing summary? Delete it.
+- Any sentence narrating a step they watched happen? Delete it.
 - Could they follow every test step without asking a question?
 
 Leave the not-done list and the worth-your-attention list alone.
