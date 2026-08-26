@@ -52,6 +52,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/plain-english-gate.py"
+          }
+        ]
+      }
     ]
   }
 }
