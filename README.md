@@ -11,16 +11,17 @@ The most useful thing here isn't any single file. It's the loop: define what "do
 | Folder | What it is | Priority |
 |---|---|---|
 | `CLAUDE.md.template` | Annotated skeleton for a project memory file, with the universal parts filled in and the project-specific parts marked as placeholders | High. Start here |
-| `skills/assess/` | The `/assess` skill: grades a diff against a task rubric, refuses to proceed on a fail | High. The centerpiece |
+| `rubric-guide.md` | The task-rubric procedure: template, fields, and what makes a criterion gradeable. Kept out of CLAUDE.md so it loads only when a rubric is being written | High. Goes with the template |
+| `skills/assess/` | The `/assess` skill: grades a change against its task rubric in a fresh agent, asks what else is wrong, refuses to proceed on a fail, and stops after three failing rounds | High. The centerpiece |
 | `rules/` | Path-scoped rules pattern: keep CLAUDE.md lean by loading stack-specific guidance only when relevant files are read | High |
 | `workflow-meta/` | The "lab" for versioning your workflow: analyses, proposals, and ADRs, with one worked example | High. The most distinctive idea here |
 | `skills/pre-commit/` | A genericized commit gate (secrets, missing auth, anti-patterns). A scaffold to adapt, not a finished tool | Medium. Fill in your own rules |
 | `skills/code-watch/` | Deep, on-demand two-lens audit: security/bugs plus conformance to your CLAUDE.md's own rules. Runs inline, no setup. Overlaps Claude Code's built-in `/security-review` | Medium |
 | `skills/systematic-debugging/` | Debugging discipline: no fixes before root cause, one hypothesis at a time, hard stop after 3 failed attempts. Adapted from obra/superpowers | Medium |
-| `output-styles/` | `Plain English`: explain technical work to someone who ships product but doesn't read code. Governs how every answer is written, with the reasoning for why this belongs in a style rather than in CLAUDE.md | Medium |
+| `output-styles/` | `Plain English`: a short style for explaining technical work to someone who ships product but doesn't read code. Governs how every answer is written, with the reasoning for why it's short and why it belongs in a style rather than in CLAUDE.md | Medium |
 | `skills/humanizer/` | The voice-neutral AI-writing tell list (em dashes, buzzwords, throat-clearing, reveal-bait). One shared source so your voice guides don't each grow a drifting copy | Medium |
-| `hooks/` | Guardrail hooks: nudge the commit skill, inject reminders, read session notes back at startup, and force a cost confirmation before any dynamic workflow fans out | Medium |
-| `scripts/` | Standalone read-only checks. `supply-chain-scan.sh` sweeps a repo for a whitespace-injector signature and unpinned `npx ...@latest` installs | Medium |
+| `hooks/` | Guardrail hooks and settings: compact long sessions earlier, read only the open items from the last session notes, nudge the commit skill, inject reminders, check the closing question for invented labels, and force a cost confirmation before any dynamic workflow fans out | High for the compaction setting, Medium for the rest |
+| `scripts/` | Standalone scripts. `supply-chain-scan.sh` sweeps a repo for a whitespace-injector signature and unpinned `npx ...@latest` installs. `comment-claims.py` lists new comment lines that claim something about a whole. `ff-sync-branch.sh` keeps a local `staging` branch in line with origin, which `/session-end` uses | Medium |
 | `commands/` | Session lifecycle and upkeep. `/blast-radius` and the audit commands are broadly useful; `/session-end` and `/worktree-janitor` assume a git-worktree plus staging-first workflow and are advanced | Mixed. Read before adopting |
 | `examples/` | Filled-in sample artifacts (rubric, investigation report, quality rules) so you can see the shapes | Reference |
 
@@ -32,16 +33,17 @@ The loop:
 
 1. **Plan.** For any non-trivial change, produce an Investigation Report (see `CLAUDE.md.template`) or use Plan Mode. The last section is a **task rubric**: 3 to 5 mutually-exclusive pillars, each with a binary pass criterion. Write it to `.rubric.md` at the repo root.
 2. **Execute.** Do the work.
-3. **Assess.** Run `/assess`. It reads `.rubric.md`, runs `git diff`, and grades each pillar pass or fail with cited evidence. Pass means it archives the rubric and clears you for commit. Fail means it stops and outputs a re-plan directive. It does not patch in place, and it does not invent a rubric if you didn't write one.
+3. **Assess.** Run `/assess`. It hands the rubric and the change (new files included) to a fresh agent that didn't write the code. That agent grades each pillar pass or fail with cited evidence, then sets the rubric aside and says what else is wrong, marking each problem must-fix or not. Pass means it archives the rubric and clears you for commit. Fail means it stops and outputs a re-plan directive. It does not patch in place, and it does not invent a rubric if you didn't write one. `rubric-guide.md` has the rubric's template and fields.
 4. **Pre-commit.** Run `/pre-commit`, a fast anti-pattern and secret scan on every commit.
 5. **Commit.**
 
 For changes that touch sensitive surfaces (auth, queries, uploads, crypto), there's a heavier optional pass. `/code-watch` runs a deeper security and quality audit on demand. The three verification skills do different jobs and shouldn't be collapsed. `/pre-commit` checks *the global don't-ship-this rules* (fast, every commit). `/code-watch` is *the deep audit before a risky merge* (slow, on demand). `/assess` checks *did this change do what the task required* (per-task contract). Cheap and frequent at the bottom, thorough and occasional at the top.
 
-Three deliberate non-goals keep `/assess` honest:
+Four deliberate non-goals keep `/assess` honest:
 
 - **No 1-to-10 scoring.** Binary per pillar. Numeric scores invite self-debate and fake precision.
 - **No automatic re-plan execution.** `/assess` reports and stops. You drive the re-plan. Autonomous re-planning on a misspecified rubric is how agents run away.
+- **No unbounded loop.** On the third failing round of one task, `/assess` stops and asks you what to do: keep going, fix in place, ship anyway, or drop it. A written analysis gets one round, then every problem is fixed in place.
 - **No rubric inference.** No `.rubric.md`, no assessment. Inferring the contract after the fact defeats the purpose.
 
 ## The second idea: a CLAUDE.md that earns its lines
@@ -53,6 +55,10 @@ Anthropic's soft target is under 200 lines, because longer files reduce adherenc
 "How it thinks" (behavioral principles, security posture, your workflow loop) stays in CLAUDE.md and loads every session. "What it does" (stack-specific tactical patterns) moves to `rules/` files with `paths:` frontmatter, so they only load when the agent reads a matching file. See `rules/README.md`.
 
 Claude Code reads two CLAUDE.md files at session start: a global one at `~/.claude/CLAUDE.md` (cross-project behavior, loads everywhere) and a per-project one at the repo root (project-specific machinery). The `CLAUDE.md.template` here bundles both layers into one file so you can start simple; its top comment explains how to split them if you want the two-file setup.
+
+**A rule stays, its history leaves.** Every line of CLAUDE.md is re-sent on every turn, and every sub-agent loads it too, so a paragraph of incident history costs you on every call for the rest of time. Keep the rule. Move its story to the proposal or ADR that adopted it (see `workflow-meta/`), and move a procedure needed at one moment into its own file, named by a "Before X, read Y" line. `rubric-guide.md` is the worked example: the rubric rule stays in the template in a few lines, and the procedure loads only when a rubric is being written. Applied to one real global CLAUDE.md, this cut it by more than a third without removing a rule.
+
+Two more settings did more for token use than any rule. Compacting at 300K tokens instead of near the end of a 1M window roughly halves the tokens read, because long sessions stop re-sending their whole history on every turn. And the session-start hook now prints only the open items from the last notes, not the whole files. Both are in `hooks/`, with the reasoning in `hooks/README.md`.
 
 Lean context is two disciplines, not one. This section is about lean *instructions*: what loads, and when. The other half is lean *data*: don't let the agent pull whole files or raw tool output into context when a scoped read (`Read` with a line range) or a subagent that returns the *conclusion* instead of the file dump would cost a fraction of the tokens. The `rules/` path-scoping above is one instance of a single instinct, don't pay for context you're not using, and that instinct should also shape how you tell the agent to *read*, not just which rules you give it.
 
@@ -75,11 +81,11 @@ The last two assume git worktrees under `<repo>/.claude/worktrees/` and (optiona
 
 ## How to use this repo
 
-1. Copy `CLAUDE.md.template` to your project as `CLAUDE.md` and fill in the placeholders.
+1. Copy `CLAUDE.md.template` to your project as `CLAUDE.md` and fill in the placeholders. Copy `rubric-guide.md` to `~/.claude/rubric-guide.md`, which is where the template and `/assess` look for it.
 2. Copy `skills/` into `~/.claude/skills/` (user scope) or `./.claude/skills/` (project scope).
 3. Copy `commands/` into `~/.claude/commands/` (user scope) or `./.claude/commands/` (project scope).
 4. Copy `rules/` into `~/.claude/rules/` and adjust the `paths:` globs to your stack.
-5. Copy `hooks/settings.json` into `.claude/settings.json` and adapt the trigger contents.
+5. Copy `hooks/settings.json` into `.claude/settings.json` and adapt the trigger contents. Copy the hook scripts into `.claude/hooks/`, and the scripts in `scripts/` into `~/.claude/scripts/`.
 6. Start a `workflow-meta` repo of your own. Don't put it inside any project.
 
 One caveat, and I mean it. Don't copy all of this in blindly. That's the opposite of the point. Read each piece, take the one or two ideas that fit how you work, and rebuild them so you understand them. The understanding is the asset, not the config file.

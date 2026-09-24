@@ -1,57 +1,43 @@
 #!/usr/bin/env python3
-"""plain-english-gate.py — Stop hook. The mechanical half of the Plain English style.
+"""plain-english-gate.py: Stop hook. The mechanical part of the Plain English style.
 
 Why this exists
 ---------------
-`output-styles/plain-english.md` is loaded into context on every session and
-ends with a nine-question checklist the agent is supposed to run on its own draft. It does
-not hold. Measured over every main-session reply since 2026-08-17 that does not relay a
-grader report, 32% contain an em dash in the agent's own prose, against a rule stated four
-separate times in loaded context that requires no judgment at all. Rates are quoted here
-rather than counts, because the corpus grows every session and only the rates are stable.
-The measurement script that recomputes all of it ships alongside this hook.
+`output-styles/plain-english.md` is loaded into context on every session, and a rule in
+loaded context does not hold on its own. A rule phrased as always/never whose violation is
+detectable from the text should be a check rather than a sentence.
 
-The rule that follows: a rule phrased as always/never, whose violation is detectable
-from the text, should be a check rather than a sentence.
+One check: a COINED LABEL in a closing question, meaning a hyphen-compound noun phrase
+("the self-disarming problem") that appears nowhere else in the reply. This is the failure
+it was written for, exactly: `self-disarm` appeared once in a long reply, inside the closing
+question, and the reader had to spend a turn asking what it meant.
 
-Two checks, both chosen because a machine can settle them and a self-check demonstrably
-cannot:
-
-  1. EM DASH in the agent's own prose. Zero judgment.
-  2. A COINED LABEL in the closing question: a hyphen-compound noun phrase
-     ("the self-disarming problem") that appears nowhere else in the reply. This is the
-     2026-08-26 failure exactly: `self-disarm` appeared once in 2,362 words, inside the
-     closing question, and the reader had to spend a turn asking what it meant.
+An earlier version also blocked on any em dash in the agent's own prose. That was dropped:
+the reader did not mind one, and every block made the agent send the whole reply a second
+time, which cost more than the dash did.
 
 Known limits, stated because the alternative is false confidence
 ----------------------------------------------------------------
-* The reply is streamed to the user BEFORE Stop runs. This hook cannot suppress a bad reply.
-  It forces the correction to arrive immediately and unprompted, which removes the round
-  trip, not the reader seeing the sentence once. So a false block is not free: they read
-  the original and then the correction. It costs one confusing sentence and one
-  regenerated reply. That is cheaper than the turn they would otherwise spend asking,
-  which is the whole trade, but it is not nothing.
+* The reply is streamed to the reader BEFORE Stop runs. This hook cannot suppress a bad reply.
+  It forces the corrected question to arrive immediately and unprompted, which removes
+  the round trip, not the reader seeing the sentence once. So a false block is not free:
+  they read the original question and then the correction.
 * It fires at most once per turn (`stop_hook_active`), so it does not verify the fix.
-* Verbatim relays inside <details> are skipped on purpose: a sub-agent's report pasted
-  as an audit record is not the main session's prose to rewrite. In the measured history
-  93% of those relays carry an em dash, and this hook covers none of them.
-* Check 2 catches hyphen-compounds only. "The org-context feature" is caught; a coined
+* Verbatim relays inside <details> or a fenced code block are skipped on purpose:
+  /assess requires the grader's report unedited as the audit record, and a relay of it
+  is not the main session's prose to rewrite.
+* The check catches hyphen-compounds only. "The org-context feature" is caught; a coined
   label made of ordinary separate words ("the pending question") is not, because a wide
   enough pattern fires on every legitimate noun phrase and a check that cries wolf gets
-  ignored. Measured at about 1 reply in 70, at roughly 80% precision. Absolute counts
-  are not quoted here on purpose: the corpus grows every session, and a count copied into
-  four files is a count that disagrees with itself within a week. The measurement script
-  shipped alongside this hook prints the current one. The residue is ordinary
+  ignored. On real transcripts it fires rarely, and most fires are right.
+  Absolute counts are not quoted here on purpose: the corpus grows every session, and a
+  count copied into four files is a count that disagrees with itself within a week.
+  The residue is ordinary
   compound adjectives in a long reply
   ("the root-cause report", "the better long-term answer"). A false block costs one
   reworded sentence, though the reader still sees the first version.
-* Check 2 only looks for a hyphen-compound sitting in front of one of the head nouns in
+* The check only looks for a hyphen-compound sitting in front of one of the head nouns in
   `_HEADS`. That list is long but closed, and nothing outside it is seen.
-* Text inside <details> or a fenced code block is skipped, which is what lets a verbatim
-  sub-agent report through. Do not rely on that escape being automatic: whatever step of
-  your workflow pastes such a report has to require the fence. Measured on one real
-  history, only 39% of those relays were fenced, and this hook would have blocked 93% of
-  them while the workflow forbade editing a word of the record.
 
 Fails open. Any error, any missing field, any unparseable input exits 0.
 """
@@ -69,7 +55,7 @@ _INLINE = re.compile(r"`[^`\n]*`")
 
 
 def prose_only(msg: str) -> str:
-    """Everything that is the agent's own sentences to the user, and nothing else.
+    """Everything that is the agent's own sentences to the reader, and nothing else.
 
     Dropped: <details> blocks (verbatim relays), fenced and inline code, blockquote
     lines (quoted material), markdown table rows, and indented blocks.
@@ -90,21 +76,7 @@ def prose_only(msg: str) -> str:
     return "\n".join(out)
 
 
-# --- check 1: em dashes ----------------------------------------------------------
-
-
-def find_em_dashes(prose: str):
-    """Return up to three quoted contexts around em dashes in the agent's own prose."""
-    hits = []
-    for m in re.finditer("—", prose):
-        ctx = prose[max(0, m.start() - 55):m.start() + 55].replace("\n", " ").strip()
-        hits.append(ctx)
-        if len(hits) == 3:
-            break
-    return hits
-
-
-# --- check 2: a coined label in the closing ask ----------------------------------
+# --- the check: a coined label in the closing ask ----------------------------------
 
 # Head nouns that turn a modifier into a NAME for something rather than describing it.
 # This is a closed list, which is a real limit and not a hidden one: "the frozen-window
@@ -130,7 +102,7 @@ _COMPOUND = re.compile(r"^[a-z]{3,}(?:-[a-z]{3,})+$")
 #     prepositions. Removing them changed no fire count, so they were buying no precision.
 #   * It used to require the definition to start immediately after the head noun, and to
 #     be introduced by `which`. That blocked three ordinary ways of doing exactly what
-#     Rule 1 asks: an appositive ("the frozen-window fix, the pause while writes are
+#     the style file asks, giving a label its plain context in place: an appositive ("the frozen-window fix, the pause while writes are
 #     locked"), a `meaning` gloss, and `which` with a word or two in front. All three now
 #     count. On the real corpus that trades one catch for another, one in and one out, so
 #     the cost is nothing and the gain is that the checker stops blocking compliance.
@@ -139,7 +111,7 @@ _COMPOUND = re.compile(r"^[a-z]{3,}(?:-[a-z]{3,})+$")
 _SELF_DEFINING = re.compile(
     r"(\s+\S+){0,3}?\s*(,\s*(which|meaning|where|the|a|an)\b|\(|:|\s+about\b)")
 
-# Check 2's premise is that an ARGUMENT got compressed into a label. A reply with no
+# The check's premise is that an ARGUMENT got compressed into a label. A reply with no
 # argument in it has nothing to compress, and a two-word hyphenated phrase there is an
 # ordinary adjective, not a coinage. Measured: every real fire in the corpus sits in a
 # reply of 128+ words of prose; the four known false positives
@@ -155,11 +127,16 @@ def _installed_command_names():
 
     Derived from the filesystem rather than written out: every skill and command the
     user installed is a name they typed themselves. `pre-commit`, `session-end` and the
-    rest come from here, so the set stays right when they add one.
+    rest come from here, so the set stays right when they add one. Read from user scope,
+    and from the `skills/` and `commands/` folders beside this hook's own folder: that is
+    project scope once installed at `.claude/hooks/`, and this repo's own copies when the
+    self-test runs from a fresh clone.
     """
     import os
     names = set()
-    for d in ("~/.claude/skills", "~/.claude/commands"):
+    here = os.path.dirname(os.path.abspath(__file__))
+    for d in ("~/.claude/skills", "~/.claude/commands",
+              os.path.join(here, "..", "skills"), os.path.join(here, "..", "commands")):
         try:
             for entry in os.listdir(os.path.expanduser(d)):
                 names.add(re.sub(r"\.md$", "", entry).lower())
@@ -171,8 +148,8 @@ def _installed_command_names():
 def closing_questions(prose: str):
     """Every question in the closing region, not just the last one.
 
-    Taking only the last one had a hole the style file itself walked into: Rule 2 tells
-    the writer to put unrequested detail behind a one-line offer ("Want the parser
+    Taking only the last one had a hole the style file itself walked into: it tells
+    the writer to put cut detail behind a one-line offer ("Want the parser
     detail?"). Put that offer after the ask and it becomes the last question, the real
     ask stops being inspected, and this check goes silent on exactly the reply it exists
     for. Scanning all of them costs 2 more fires in 1,977 real turns.
@@ -215,34 +192,24 @@ def find_coined_labels(prose: str):
 # --- the block message -----------------------------------------------------------
 
 
-def build_reason(dashes, labels) -> str:
-    parts = ["Your reply broke the Plain English style. Say it again, corrected. "
-             "Do not apologise, do not explain the correction, just give the corrected "
-             "reply."]
-    if dashes:
-        parts.append(
-            "\nEM DASHES in your own prose. The rule is zero, no exceptions "
-            "(~/.claude/output-styles/plain-english.md). Replace each with a period, "
-            "comma, colon, or parentheses, or restructure the sentence:")
-        for d in dashes:
-            parts.append(f"  ... {d} ...")
-    if labels:
-        parts.append(
-            "\nCOINED LABEL IN YOUR CLOSING QUESTION. You invented a name to compress "
-            "an argument, then put it in the one sentence they read for the decision, "
-            "where they have the least context to decode it:")
-        for label, word in labels:
-            parts.append(f'  "{label}"  ({word} appears nowhere else in this reply)')
-        parts.append(
-            "Rewrite the closing question so it stands alone for someone who read "
-            "nothing above it. Say the thing the label stands for, in words. If that "
-            "reads clumsy, that is the answer: do not coin the phrase at all.")
+def build_reason(labels) -> str:
+    parts = ["Your closing question broke the Plain English style. Send ONLY the "
+             "corrected question. Do not send the rest of the reply again, do not "
+             "apologise, do not explain the correction.",
+             "\nCOINED LABEL IN YOUR CLOSING QUESTION. You invented a name to compress "
+             "an argument, then put it in the one sentence the reader reads for the "
+             "decision, where they have the least context to decode it:"]
+    for label, word in labels:
+        parts.append(f'  "{label}"  ({word} appears nowhere else in this reply)')
+    parts.append(
+        "Rewrite the question so it stands alone for someone who read nothing above "
+        "it. Say the thing the label stands for, in words. If that reads clumsy, that "
+        "is the answer: do not coin the phrase at all.")
     return "\n".join(parts)
 
 
 def check(message: str):
-    prose = prose_only(message)
-    return find_em_dashes(prose), find_coined_labels(prose)
+    return find_coined_labels(prose_only(message))
 
 
 # --- self-test -------------------------------------------------------------------
@@ -258,8 +225,8 @@ def selftest() -> int:
        contains, so the quiet half is enforced too.
     3. **Every passage in must_not_fire has to be a reply the style file would actually
        accept.** An earlier draft filed under "correct passages left alone" six replies
-       that closed with "Want me to run it on staging first?" and the like, which Rule 3
-       forbids outright. A fixture list is a second statement of the rules, and one that
+       that closed with "Want me to run it on staging first?" and the like, a question
+       that makes no sense to someone who read nothing above it. A fixture list is a second statement of the rules, and one that
        contradicts them is worse than no fixture at all.
     """
     body = ("The reset path throws away everything git is tracking, which is the point "
@@ -273,9 +240,6 @@ def selftest() -> int:
             "that already shells out four times. ")
 
     must_fire = [
-        ("em dash in prose",
-         "Here is the finding. The fix is small \u2014 one line in the parser.\n"
-         "Want me to ship it?"),
         ("a real failure this was written for, at real length",
          "The rule I drafted says a wrong sentence in text only people working in "
          "the repo read can never block a commit. Code comments, plan documents, "
@@ -305,30 +269,18 @@ def selftest() -> int:
          "detail?"),
     ]
 
-    # Every one of these is a reply the shipped style file accepts: names defined where
-    # they first appear, and a closing question that stands alone for someone who read
-    # nothing above it. If you add a fixture here, check it against Rule 1 and Rule 3
-    # first. The label cases are deliberately over 100 words, because a shorter fixture
+    # Each of these closes with a question the shipped style file accepts: no shorthand
+    # in it, and it stands alone for someone who read nothing above it. If you add a
+    # fixture here, check its question against both of those first. The label cases are deliberately over 100 words, because a shorter fixture
     # is skipped by the prose floor and would prove nothing about the exclusion it names.
     must_not_fire = [
-        ("an em dash inside fenced code is not the agent's prose",
-         "Here is the line as it stands:\n\n```\nfoo = bar \u2014 baz\n```\n\n"
-         "Want me to rewrite the `foo` assignment so `bar` and `baz` are joined with "
-         "a comma rather than a dash?"),
-        ("an em dash in a quoted block is not the agent's prose",
-         "Their own words:\n\n> the fix is small \u2014 one line\n\n"
-         "Want me to change the parser's retry limit from three to one now?"),
-        ("a verbatim grader relay is skipped on purpose",
-         "The grader failed two rubric items.\n\n<details>\nResult: FAIL \u2014 3 of 5\n"
-         "</details>\n\nWant me to go back to Plan mode for the two rubric items the "
-         "grader failed?"),
         ("a label that defines itself in place",
          body + "\n\nWant me to add the untracked-file check, which looks for files "
          "git has never recorded, before the reset runs?"),
         ("a skill the user installed is a name they already typed",
          body + "\n\nWant me to run the pre-commit check over the staged diff, so "
          "known anti-patterns get caught before the pull request goes up?"),
-        ("another one, from the commands directory",
+        ("another one, from ~/.claude/commands",
          body + "\n\nWant me to run the session-end step now, so the session notes "
          "get written and the worktree goes away?"),
         ("a plain closing question with no coinage in it",
@@ -337,18 +289,19 @@ def selftest() -> int:
     ]
 
     # Fixtures that must fire ONLY because of the installed-name exclusion. Without the
-    # proof below, "a skill the user installed" passing proves nothing: it could be
+    # proof below, "a skill the user installed" passing proves nothing: it could be passing
     # because the head noun is missing from _HEADS, or the prose floor caught it, or the
     # regex never matched at all. Naming the reason and testing it is the difference.
     exclusion_proof = [
         ("a skill the user installed is a name they already typed", "pre-commit"),
-        ("another one, from the commands directory", "session-end"),
+        ("another one, from ~/.claude/commands", "session-end"),
     ]
 
     # Real violations of the style file that this check does NOT catch. Asserted here so
-    # the gap is recorded and stays visible, NOT because the text is acceptable: Rule 1
-    # requires a coined name's definition to travel with it every time it is used, and
-    # Rule 3 forbids leaning on a term defined further up. The check cannot see either.
+    # the gap is recorded and stays visible, NOT because the text is acceptable: the
+    # style file calls an invented label shorthand wherever it appears, and requires a
+    # question to make sense to someone who read nothing above it. The check cannot see
+    # either.
     known_misses = [
         ("defined once far above, then used bare in the closing ask",
          "There is a self-disarming problem here: the rule I wrote would have excused "
@@ -362,16 +315,16 @@ def selftest() -> int:
     ]
 
     # Every must_not_fire passage claims to be a reply the style file accepts, so its
-    # closing question has to satisfy Rule 3: it must make sense to someone who read
+    # closing question has to satisfy the style file's rule on asking: it must make sense to someone who read
     # nothing above it. Checked mechanically, because a human wrote this list wrong twice
     # running: four bare "it"s in the first draft became "that line", "that one-line
     # change" and "those two items" in the second, and only a grader caught either.
     #
-    # This ban is deliberately STRICTER than Rule 3. Rule 3 allows "this worktree" and
+    # This ban is deliberately STRICTER than that rule, which allows "this worktree" and
     # "the items that failed", where the word is a determiner or a relative pronoun and
     # carries a referent with it. Telling those apart from a bare pointer needs judgment,
     # and a checker that needs judgment is the thing this whole change argues against. On
-    # a seven-item list I write myself, banning the words outright costs nothing and is
+    # a short list I write myself, banning the words outright costs nothing and is
     # certain. Do not copy this pattern onto real replies: there it would cry wolf.
     _DEICTIC = re.compile(r"\b(it|its|this|that|these|those|them|they|above)\b", re.I)
 
@@ -380,18 +333,17 @@ def selftest() -> int:
         q = (closing_questions(prose_only(msg)) or [""])[-1]
         bad = sorted({m.group(0).lower() for m in _DEICTIC.finditer(q)})
         if bad:
-            fails.append(f"FIXTURE BREAKS RULE 3: '{name}' closes with "
+            fails.append(f"FIXTURE BREAKS THE RULE ON ASKING: '{name}' closes with "
                          f"{bad} pointing above it, so it is not a passage the style "
                          f"file accepts and must not be listed as one.\n"
                          f"    {q}")
     for name, msg in must_fire:
-        d, l = check(msg)
-        if not (d or l):
+        if not check(msg):
             fails.append(f"MISSED: {name}")
     for name, msg in must_not_fire:
-        d, l = check(msg)
-        if d or l:
-            fails.append(f"FALSE POSITIVE: {name} -> dashes={d} labels={l}")
+        l = check(msg)
+        if l:
+            fails.append(f"FALSE POSITIVE: {name} -> labels={l}")
 
     # Prove the installed-name exclusion is the reason those two stay quiet.
     fixtures = dict(must_not_fire)
@@ -400,28 +352,25 @@ def selftest() -> int:
     try:
         _installed_command_names = lambda: set()
         for name, word in exclusion_proof:
-            _, l = check(fixtures[name])
+            l = check(fixtures[name])
             if not any(w == word for _, w in l):
                 fails.append(f"NOT ACTUALLY EXCLUDED: '{name}' stays quiet for some "
                              f"reason other than '{word}' being an installed name")
     finally:
         _installed_command_names = real
 
-    # The shipped style files must trip NEITHER check. Both, not just labels: an em dash
-    # introduced into the file it governs is exactly the regression worth catching.
+    # The shipped style files must not trip the check.
     here = os.path.dirname(os.path.abspath(__file__))
     for p in (os.path.expanduser("~/.claude/output-styles/plain-english.md"),
               os.path.join(here, "..", "output-styles", "plain-english.md")):
         if os.path.exists(p):
-            d, l = check(open(p).read())
-            if d or l:
-                fails.append(f"SHIPPED FILE TRIPS ITS OWN CHECK: {p} -> "
-                             f"dashes={d} labels={l}")
+            l = check(open(p).read())
+            if l:
+                fails.append(f"SHIPPED FILE TRIPS ITS OWN CHECK: {p} -> labels={l}")
 
     escaped = []
     for name, msg in known_misses:
-        d, l = check(msg)
-        if d or l:
+        if check(msg):
             escaped.append(name)
 
     if fails:
@@ -458,10 +407,10 @@ def main() -> int:
         msg = data.get("last_assistant_message") or ""
         if not msg.strip():
             return 0
-        dashes, labels = check(msg)
-        if not (dashes or labels):
+        labels = check(msg)
+        if not labels:
             return 0
-        sys.stderr.write(build_reason(dashes, labels) + "\n")
+        sys.stderr.write(build_reason(labels) + "\n")
         return 2
     except Exception:
         return 0

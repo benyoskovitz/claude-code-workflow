@@ -17,6 +17,14 @@
   (it loads for every project) and keep only the project-specific parts here. Claude
   Code reads both at session start. The global file is where cross-project behavior
   belongs; this project file leans on it instead of repeating it.
+
+  KEEPING IT SHORT: a rule stays, its history leaves. Every line here is re-sent
+  on every turn of every session, and every sub-agent loads it too. So a rule's
+  incident story goes in the proposal or ADR that adopted it (see workflow-meta/),
+  and a procedure needed at one moment goes in its own file, named here by a
+  "Before X, read Y" line. The Task Rubric section below is the pattern: the rule
+  and the three criteria that decide most rubrics stay, the procedure lives in
+  rubric-guide.md.
 -->
 
 # <PROJECT NAME>
@@ -34,6 +42,19 @@ These principles sit on top of everything else in this file. They apply to every
 3. **Surgical changes.** Touch only what the request requires. Match existing style, don't change quote style, add type hints, reformat whitespace, or rewrite comments as a side effect. Mention unrelated dead code, don't delete it. Only remove orphans your own change created.
 
 4. **Goal-driven execution.** For non-trivial tasks, the Task Rubric below is how this works in practice: define binary pass criteria before coding, then loop until each pillar passes.
+
+## Task Rubric: define "done" before Execute
+
+For any non-trivial coding task (more than a one-line fix), define a **task rubric** during Plan or Investigation, before writing code: 3 to 5 MECE pillars, each with a binary pass criterion, saved to `.rubric.md` at the working directory root. **Before writing or rewriting a `.rubric.md`, read `~/.claude/rubric-guide.md`**: it holds the template, the `Footprint` and `Failing rounds` fields, and what makes a criterion gradeable.
+
+Three rules that decide most rubrics:
+- **Collectively exhaustive means every top-level directory the change touches.**
+- **A criterion names a property, not an example.**
+- **Every pillar must be checkable from the repository when `/assess` runs.** Anything needing a deployed environment belongs in the verification plan.
+
+**Then Execute, then `/assess`**, graded by a fresh agent. Any failed pillar, unsettled criterion, or must-fix finding: re-enter Plan narrowed to that item. Do NOT patch in place. Capped at three failing rounds, after which `/assess` asks the user, who may direct a fix in place. **Only a `PASS`** leads to `/pre-commit`, then commit, then PR. A written analysis (a document that informs a decision and changes nothing an agent follows) gets one grading round, then every problem is fixed in place and listed in the PR body.
+
+**Skip the rubric only for:** typos, comment or formatting-only changes, dependency bumps without API changes, generated code, anything where the Investigation Report is also skipped. "This is small" is the failure mode. When in doubt, write it.
 
 ## Maintenance change protocol
 
@@ -53,7 +74,7 @@ Produce all sections. If a section is empty, explain why, empty without explanat
 - **Tests covering this code path:** list test files, or "none found, flag as risk"
 - **Schema / contract impact:** Does this touch <YOUR SCHEMA SOURCES OF TRUTH, e.g. types file, migrations, API contracts>? If yes, <run your sync check>.
 - **<PROJECT-SPECIFIC RISK CHECK>:** <e.g. "does this touch a code path with a known footgun? Audit for X." Add one line per recurring failure mode you've hit. These are your scars, they're the most valuable lines in the file.>
-- **Task rubric (3-5 MECE pillars, binary pass criteria):** what does "done" mean for *this* task? Each pillar names what to verify and how. Pillars are task-specific. **Write the rubric to `.rubric.md`** at the repo root so the `/assess` skill can read it after Execute.
+- **Task rubric:** per the Task Rubric section above, written to `.rubric.md`.
 - **Open questions:** list
 
 ### Then propose
@@ -61,7 +82,7 @@ Produce all sections. If a section is empty, explain why, empty without explanat
 - **Files to edit:** list
 - **Per-file change summary:** one line each
 - **Tests to update or add:** list
-- **Verification plan:** lint, build, test, <smoke if any>, manual check (what), then **`/assess`** to grade the diff against the rubric before **`/pre-commit`**. If `/assess` fails any pillar, re-enter Plan mode narrowed to the failed pillar, do NOT patch in place.
+- **Verification plan:** lint, build, test, <smoke if any>, manual check (what), then **`/assess`**, then **`/pre-commit`**.
 
 ### Greenfield additions
 
@@ -97,43 +118,20 @@ a schema-sync-checker that keeps your sources of truth aligned. Routing rules:>
 
 ### Bounded delegation is pre-authorized
 
-Claude Code's built-in default is not to delegate unless asked. Treat this section as the ask, standing and in writing. **Delegating to a single bounded sub-agent in the cases below IS a user request: do it, announce it in one line, and don't stop for permission.**
-
-Pre-authorized, no per-invocation permission needed:
-
-1. **A skill's own steps.** If a skill specifies a sub-agent as part of how it works, run it as written. The `/assess` grader is the canonical case: it has to be a fresh agent, because the agent that wrote the code can't certify it. Self-grading is a failure of the skill, not a safe fallback.
-2. **This project's agent registry.** Agents defined in `.claude/agents/` and invoked as this file directs.
-3. **Read-only exploration** where the sub-agent exists to keep a large volume of search output out of the main context.
-
-Still gated, unchanged:
-
-- **Every `Workflow` call** keeps the full pre-flight below: max agent count, token estimate, cheaper alternative, explicit go-ahead.
-- **Ad-hoc fan-out of 3 or more sub-agents** that no skill or registry named in advance. State the count and the reason first.
-
-The line is fan-out, not delegation. One named agent doing a bounded job is a tool call. A swarm the agent decided to spawn on its own is a spending decision, and only that needs a human in the loop.
-
-If a sub-agent can't be spawned for any reason, say so explicitly and name what was lost. Never silently substitute the current session for an independent one.
+Treat this as a standing request: spawn ONE bounded sub-agent without asking when a skill's own steps call for it (`/assess` must be graded by a fresh agent, never self-graded), when this project's `.claude/agents/` registry calls for it, or for read-only exploration that keeps a large search out of the main context. Announce it in one line and don't stop for permission. Still gated: every `Workflow` call, and ad-hoc fan-out of 3+ sub-agents, which needs the count and the reason stated first. If a sub-agent cannot be spawned, say so and name what was lost. Never silently substitute the current session for an independent one.
 
 ## Dynamic workflows: cost gate
 
-A dynamic workflow can fan out into hundreds of sub-agents and spend millions of tokens from a script nobody read closely. Treat every `Workflow` call as a spending decision.
+**Before EVERY `Workflow` call, state and get a clear go-ahead on:** the worst-case sub-agent count (multiply through every fan-out and loop; impose a cap where there is no bound), a rough token estimate (about 8k output tokens per agent), and the cheaper alternative. For low-stakes, easy-to-judge tasks (instruction audits, doc sweeps, anything you validate by eye), a solo pass or a fan-out *without* adversarial verification is almost always right. Verification swarms (N skeptics times every finding) are where tokens detonate. Reserve them for findings genuinely expensive for a human to judge. Leave `ultracode` off, and keep routine coding solo. `hooks/workflow-cost-gate.sh` forces a confirm prompt and under-counts nested fan-out. The estimate is still the agent's job. The normal review gates still apply to whatever a workflow produces. Why, and when a workflow is worth it: `hooks/README.md` in the claude-code-workflow repo, "The cost gate".
 
-**Workflows are an opt-in power tool, not a default mode.**
+## Comments: what a comment may claim
 
-- **Leave `ultracode` off.** That setting lets the agent decide on its own when a task earns a fan-out. That's a standing grant of autonomy, and it's the opposite of gating spend.
-- **Invoke a workflow explicitly, per task**, and only where breadth genuinely beats a single context: a broad review or audit across many dimensions at once; a codebase-wide migration or sweep, one isolated worktree agent per site; a design decision worth several independent approaches judged against each other; or exhaustive research that needs multi-modal source fan-out.
-- **Routine coding stays solo.** Explicitly out of scope. A workflow is not a faster way to write a feature.
-- **The normal gate still applies to whatever a workflow produces.** Rubric, then `/assess`, then `/pre-commit`, then a human. A workflow proposes; it doesn't bypass review.
+Every explanatory sentence is one more thing that can be false, and nothing mechanical re-reads it: the compiler, the linter and the tests do not read comments, so the first reader to catch a wrong one is usually a grader, at the cost of a full round.
 
-**Before EVERY `Workflow` call, state these and wait for a clear go-ahead:**
-
-1. **Maximum sub-agent count.** Read the script's fan-out (`agent`, `parallel`, `pipeline`) and any loops, multiply through, and give the worst case as a number. Not "a few." If the loop is bounded only by input or budget, say so and name the hard cap you'll impose.
-2. **Rough token estimate.** Agents times typical output per agent. Roughly 8k output tokens per agent is a workable anchor, so 100 agents is about 0.8M tokens.
-3. **The cheaper alternative, first.** For anything low-stakes and easy to judge by eye (doc sweeps, instruction audits), a single ordinary pass is usually the right call. Verification swarms, where N skeptics re-check every finding, are where the cost detonates. Save them for findings that are genuinely expensive for a human to judge.
-
-Pair this with `hooks/workflow-cost-gate.sh`, which forces the confirmation prompt automatically. The hook is the floor. The estimate above is still the agent's job, and it should never be waved through silently.
-
-The hook reads the top-level script only, so it under-counts when spawned agents spawn their own (possible up to five levels deep since v2.1.172). Read every count it reports as a minimum.
+- **Write comments last, from the finished code, and only for what the code cannot say.** The why, never the what. Before `/assess`, re-read every comment the diff touches against the finished code, as its own pass. `python3 ~/.claude/scripts/comment-claims.py`, run in the project, lists the added comment lines that assert something about a whole, which is where that pass starts. It is advisory, not the pass.
+- **A completeness claim is written as its search, never as a count.** "Exactly two sites", "only one rule", "the check catches X, Y and Z" are claims about a whole, and the enumeration is the part that goes false. Write the search or the test that established it (`grep -rn "someCall(" src/`) and let the reader run it. If the count matters to correctness, it is a test, not a sentence.
+- **A derived number is never retyped.** A figure a script, query or test produced reaches a document only as that command's output pasted verbatim. A comment carries the command and no number. A constant the code defines (`CAP = 4`) is exempt: the code is its home.
+- **One home per fact.** A rule's reason lives in one place, and every other place points at it. Before writing a reason, grep for it: the second home usually already exists.
 
 ## Required reading before implementation
 

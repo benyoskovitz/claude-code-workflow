@@ -1,11 +1,15 @@
 # Task Rubric, add rate limiting to the public API
 **Date:** 2026-06-07
 **Branch:** feature/api-rate-limit
+**Footprint:** src/, tests/, config/
+**Failing rounds:** 0
 
 <!--
   A rubric is 3-5 MECE pillars (mutually exclusive, collectively exhaustive),
   each with a BINARY pass criterion and a stated verification method. Written
   BEFORE Execute, read by /assess AFTER. This is a realistic, sanitized example.
+  /assess refuses a rubric without the Footprint and Failing rounds lines; see
+  rubric-guide.md for what each one does.
 -->
 
 1. **Limit enforced per API key**: requests above the configured threshold for a

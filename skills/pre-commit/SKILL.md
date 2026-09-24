@@ -60,7 +60,13 @@ Assign each finding a severity: **BLOCK** (must fix before commit) or **WARN**
 - **Fire-and-forget async**: unawaited promises in serverless handlers (they
   silently never complete). **WARN.**
 - **Generic error messages**: `"Something went wrong"` swallowing the real error.
-  Surface the actual message. **WARN.**
+  **WARN.** This matches literal strings, so it cannot see a message that is
+  generic in other words, or whether the error reached anyone. It is a floor, not
+  the rule. The rule, for your CLAUDE.md or a `rules/` file: every failure message
+  names something the reader can do, and every caught error reaches either the
+  reader or your error monitoring, with the diff showing which. Show the error's
+  own text when the reader can act on it. When it is a framework artifact they
+  can't act on, report it to monitoring and show the action alone.
 - **<Your stack's recurring footguns>**: add the patterns you keep re-learning.
 
 ### 3. Tests and types
@@ -76,7 +82,13 @@ Note passing results in the summary ("Tests: N passed", "Types: OK").
 in the diff, check whether a sibling test file exists. Exclude thin wrappers,
 config, types, and UI-only files. This is a nudge, not a block.
 
-### 4. Report
+### 4. Project-specific checks
+
+Run any pre-commit checks the project declares for itself. Look for a section titled "Project-specific pre-commit checks" (or similar) in the project's `CLAUDE.md`, or for declarations under the project's `.claude/`. Run each command the project lists and apply its declared severity (BLOCK, WARN, or advisory). If the project declares none, skip this step silently.
+
+These live in the project, not here, because the scripts and paths they name exist only in that repo. Hardcoding them in this skill makes it error or mislead everywhere else. Examples a project might declare: a docs-staleness script, a sitemap or structured-data check for its marketing site, or an integration-test suite that needs a local service.
+
+### 5. Report
 
 ```
 PRE-COMMIT CHECK
