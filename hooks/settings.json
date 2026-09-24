@@ -1,12 +1,15 @@
 {
-  "_comment": "Genericized example. Copy to .claude/settings.json and replace the <PLACEHOLDER> reminder text with your project's recurring failure modes.",
+  "_comment": "Genericized example. Copy to .claude/settings.json and replace the <PLACEHOLDER> reminder text with your project's recurring failure modes. The env block compacts the conversation at 300K tokens instead of near the window's end: see hooks/README.md, \"Compact earlier\".",
+  "env": {
+    "CLAUDE_CODE_AUTO_COMPACT_WINDOW": "300000"
+  },
   "hooks": {
     "SessionStart": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "if [ -d session-notes ] && ls session-notes/*.md >/dev/null 2>&1; then echo '--- LAST SESSION CONTEXT ---'; ls -1 session-notes/*.md | sort | tail -n 3 | while IFS= read -r f; do cat \"$f\"; echo; done; echo '--- END LAST SESSION ---'; elif [ -f SESSION_NOTES.md ]; then echo '--- LAST SESSION CONTEXT ---'; tail -n 60 SESSION_NOTES.md; echo '--- END LAST SESSION ---'; fi",
+            "command": "bash .claude/hooks/session-start-notes.sh",
             "statusMessage": "Checking for session notes..."
           }
         ]
